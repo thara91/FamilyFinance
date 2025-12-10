@@ -11,7 +11,7 @@ import {
  * --- KONFIGURASI API ---
  * GANTI URL DI BAWAH INI dengan URL Web App dari Deploy Google Apps Script Anda.
  */
-const API_URL = "https://script.google.com/macros/s/AKfycbyu_PvRSwFiwx7uCup3xtPeQ0tEftQ6D9tAgItPNge1gOohlShNw933Slsk8pbN0EFQlQ/exec"; 
+const API_URL = "https://script.google.com/macros/s/AKfycbwbVuPWQQyJrkHW5tcJifV5vBYEaJtZ2VPRyBXysawCASYMW8upXtIPMdYOWdHRs07zZw/exec"; 
 
 
 /**
