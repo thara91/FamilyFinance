@@ -8,17 +8,29 @@ import {
 } from 'lucide-react';
 
 /**
- * --- KONFIGURASI API ---
+ * --- KONFIGURASI API GOOGLE SHEET ---
  * GANTI URL DI BAWAH INI dengan URL Web App dari Deploy Google Apps Script Anda.
  */
 const API_URL = "https://script.google.com/macros/s/AKfycbwbVuPWQQyJrkHW5tcJifV5vBYEaJtZ2VPRyBXysawCASYMW8upXtIPMdYOWdHRs07zZw/exec"; 
 
 
 /**
- * GEMINI API HELPER
+ * GEMINI API HELPER (UNTUK SCAN & AI)
  */
 const callGemini = async (prompt, base64Data = null, mimeType = "image/jpeg") => {
-  const apiKey = ""; // Biarkan kosong jika menggunakan environment runtime
+  // ⚠️ PENTING UNTUK APP LIVE (VERCEL/WEB) ⚠️
+  // Agar fitur Scan/AI berjalan di website Anda, Anda WAJIB mengisi API Key di bawah ini.
+  // 1. Buka: https://aistudio.google.com/app/apikey
+  // 2. Login & Klik "Create API Key"
+  // 3. Copy key tersebut dan tempel di dalam tanda kutip di bawah:
+  
+  const apiKey = "AIzaSyAA3yjQTvQ6zhs13ESwZkrSXFFCECSvL-8"; // <--- PASTE API KEY ANDA DI SINI (Contoh: "AIzaSy...")
+
+  // Catatan: Jika apiKey kosong, scan akan gagal di mode Live.
+  if (!apiKey && window.location.hostname !== 'localhost') {
+      console.warn("API Key Gemini kosong! Fitur scan tidak akan berjalan.");
+  }
+
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
 
   const parts = [{ text: prompt }];
@@ -32,7 +44,15 @@ const callGemini = async (prompt, base64Data = null, mimeType = "image/jpeg") =>
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ contents: [{ parts }] })
     });
-    if (!response.ok) throw new Error(`Gemini API Error: ${response.statusText}`);
+    
+    if (!response.ok) {
+       // Menangani error umum seperti API Key salah/kosong
+       if (response.status === 400 || response.status === 403) {
+         throw new Error("API Key Invalid atau Kosong. Cek Settings.");
+       }
+       throw new Error(`Gemini API Error: ${response.statusText}`);
+    }
+    
     const data = await response.json();
     return data.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated.";
   } catch (error) {
@@ -309,7 +329,7 @@ export default function App() {
       const response = await callGemini(prompt);
       setAiAdvice(response);
     } catch (err) {
-      showNotification("Gagal menganalisa.");
+      showNotification("Gagal menganalisa. Cek API Key.");
     } finally {
       setIsAnalyzing(false);
     }
@@ -353,7 +373,7 @@ export default function App() {
         }
       } catch (err) {
         console.error(err);
-        showNotification("Gagal memproses gambar/PDF.");
+        showNotification("Gagal memproses. Cek API Key Gemini.");
       } finally {
         if(isStatement) setIsScanningStatement(false); else setIsScanning(false);
       }
