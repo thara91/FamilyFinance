@@ -20,8 +20,6 @@ const API_URL = "https://script.google.com/macros/s/AKfycbyu_PvRSwFiwx7uCup3xtPe
  */
 const callGemini = async (prompt, base64Data = null, mimeType = "image/jpeg") => {
   // Masukkan API Key Gemini Anda di sini. 
-  // Jika kosong, pastikan Anda menjalankannya di lingkungan yang mendukung runtime key inject,
-  // atau masukkan string key manual: const apiKey = "AIzaSy...";
   const apiKey = ""; 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
 
@@ -642,9 +640,79 @@ export default function App() {
         {view === 'settings' && (
            <Card className="p-8">
              <h2 className="text-xl font-bold mb-4">Pengaturan</h2>
-             <div className="p-4 bg-indigo-50 border border-indigo-200 rounded text-indigo-800 text-sm">
+             
+             {/* Status Koneksi */}
+             <div className="p-4 bg-indigo-50 border border-indigo-200 rounded text-indigo-800 text-sm mb-8">
                <p className="font-bold">Status: Live Mode (Google Sheets)</p>
                <p className="mt-2 text-xs font-mono break-all">{API_URL}</p>
+             </div>
+
+             <div className="space-y-6">
+                {/* Manage Categories */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Kelola Kategori</label>
+                  <div className="flex flex-wrap gap-2">
+                    {data.categories.map(c => (
+                      <span key={c} className="bg-slate-100 px-3 py-1 rounded-full text-sm text-slate-600 border border-slate-200 flex items-center gap-2">
+                        {c}
+                        <button onClick={() => setData(prev => ({...prev, categories: prev.categories.filter(item => item !== c)}))} className="hover:text-rose-500">×</button>
+                      </span>
+                    ))}
+                    <button 
+                      onClick={() => {
+                        const newCat = prompt("Nama Kategori Baru:");
+                        if (newCat) setData(prev => ({...prev, categories: [...prev.categories, newCat]}));
+                      }}
+                      className="px-3 py-1 rounded-full text-sm border border-dashed border-slate-300 text-slate-500 hover:border-indigo-500 hover:text-indigo-500"
+                    >
+                      + Tambah
+                    </button>
+                  </div>
+                </div>
+
+                {/* Manage Placements */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Pos Keuangan (Akun)</label>
+                  <div className="flex flex-wrap gap-2">
+                    {data.placements.map(p => (
+                      <span key={p} className="bg-indigo-50 px-3 py-1 rounded-full text-sm text-indigo-700 border border-indigo-200 flex items-center gap-2">
+                        {p}
+                        <button onClick={() => setData(prev => ({...prev, placements: prev.placements.filter(item => item !== p)}))} className="hover:text-rose-500">×</button>
+                      </span>
+                    ))}
+                    <button 
+                      onClick={() => {
+                        const newPlace = prompt("Nama Pos Keuangan Baru:");
+                        if (newPlace) setData(prev => ({...prev, placements: [...prev.placements, newPlace]}));
+                      }}
+                      className="px-3 py-1 rounded-full text-sm border border-dashed border-slate-300 text-slate-500 hover:border-indigo-500 hover:text-indigo-500"
+                    >
+                      + Tambah
+                    </button>
+                  </div>
+                </div>
+
+                {/* Manage Users */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Anggota Keluarga</label>
+                  <div className="flex flex-wrap gap-2">
+                    {data.users.map(u => (
+                      <span key={u} className="bg-slate-100 px-3 py-1 rounded-full text-sm text-slate-600 border border-slate-200 flex items-center gap-2">
+                        {u}
+                        <button onClick={() => setData(prev => ({...prev, users: prev.users.filter(item => item !== u)}))} className="hover:text-rose-500">×</button>
+                      </span>
+                    ))}
+                    <button 
+                      onClick={() => {
+                        const newUser = prompt("Nama Anggota Baru:");
+                        if (newUser) setData(prev => ({...prev, users: [...prev.users, newUser]}));
+                      }}
+                      className="px-3 py-1 rounded-full text-sm border border-dashed border-slate-300 text-slate-500 hover:border-indigo-500 hover:text-indigo-500"
+                    >
+                      + Tambah
+                    </button>
+                  </div>
+                </div>
              </div>
            </Card>
         )}
