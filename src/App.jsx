@@ -251,10 +251,13 @@ export default function App() {
 
   const handleDelete = async (id) => {
     if (confirm("Yakin ingin menghapus data ini?")) {
+      // FIX: Paksa konversi ke String untuk perbandingan ID agar aman (menghindari bug Number vs String)
       setData(prev => ({
         ...prev,
-        transactions: prev.transactions.filter(t => t.id !== id)
+        transactions: prev.transactions.filter(t => String(t.id) !== String(id))
       }));
+      
+      showNotification("Menghapus dari Cloud...");
       await DataService.deleteTransaction(id);
       showNotification("Data terhapus.");
     }
