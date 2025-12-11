@@ -4,7 +4,7 @@ import {
   Activity, LayoutDashboard, Table, Settings, Save, Trash2, Globe, 
   Sparkles, Camera, Loader, Landmark, CreditCard, Coins, Briefcase, 
   ArrowRightLeft, FileText, BarChart3, Building2, Bitcoin, Users, Tags,
-  ChevronRight, Calendar, User, X, Edit3, Filter
+  ChevronRight, Calendar, User, X, Edit3, Filter, Eye, EyeOff // Import Icon Eye
 } from 'lucide-react';
 
 // --- CONFIG ---
@@ -112,12 +112,40 @@ const ASSET_TYPES = {
 };
 
 export default function App() {
-  const [data, setData] = useState({ transactions: [], users: [], categories: [], placements: [] });
+  const [data, setData] = useState({ 
+    transactions: [], 
+    users: ['Ayah', 'Bunda', 'Kakak', 'Adik'], 
+    categories: [
+        // Income
+        'Gaji Bulanan', 'Tunjangan Tetap', 'THR', 'Bonus Tahunan', 'Side Hustle', 'Dividen/Bunga', 'Uang Sewa',
+        // Fixed Expenses
+        'KPR/Sewa Rumah', 'Listrik/Air/Internet', 'SPP/Pendidikan', 'Cicilan Utang', 'Asuransi', 'Gaji ART',
+        // Routine Expenses
+        'Belanja Dapur', 'Belanja Harian', 'Transportasi/BBM', 'Uang Saku Anak', 'Pulsa/Data',
+        // Lifestyle
+        'Kondangan/Sumbangan', 'Arisan', 'Zakat/Sedekah', 'Hiburan Keluarga', 'Skincare/Personal',
+        // Saving
+        'Dana Darurat', 'Investasi', 'Dana Pensiun', 'Sinking Fund'
+    ], 
+    placements: [
+        // Cash in Bank
+        'Mandiri Ayah:BANK', 'Mandiri Bunda:BANK', 'BRI Ayah:BANK', 'BSI Bunda:BANK', 'Rekening A:BANK', 'Rekening B:BANK', 'Dompet Tunai:BANK',
+        // Investment
+        'Saham:INVESTMENT', 'Obligasi:INVESTMENT', 'Pembiayaan:INVESTMENT',
+        // Crypto
+        'Kripto:CRYPTO',
+        // Commodity
+        'Emas Batangan:COMMODITY', 'Emas Perhiasan:COMMODITY', 'Silver:COMMODITY'
+    ], 
+    settings: { currency: 'IDR' }
+  });
+  
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState('dashboard');
   const [notification, setNotification] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiAdvice, setAiAdvice] = useState(null);
+  const [showAssets, setShowAssets] = useState(true); // State untuk Toggle Hide Aset
   
   // Edit State
   const [editingId, setEditingId] = useState(null);
@@ -426,16 +454,31 @@ export default function App() {
               </div>
             </Card>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {parsedPlacements.map(p => (
-                <div key={p.original} className="bg-white p-3 rounded-xl border flex justify-between items-center shadow-sm">
-                  <div className="flex gap-3 items-center">
-                    <div className={`p-2 rounded-lg ${ASSET_TYPES[p.type]?.bg || 'bg-gray-100'}`}>{ASSET_TYPES[p.type] ? React.createElement(ASSET_TYPES[p.type].icon, {size:18, className: ASSET_TYPES[p.type].color}) : <Wallet/>}</div>
-                    <div><p className="font-bold text-sm">{p.name}</p><p className="text-[10px] text-gray-400">{ASSET_TYPES[p.type]?.label}</p></div>
-                  </div>
-                  <span className="font-bold text-slate-700">{formatCurrency(stats.balances[p.original] || 0)}</span>
+            {/* 2. Rincian Akun per Kategori dengan Tombol Hide */}
+            <div>
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-bold text-lg text-slate-800">Rincian Portfolio</h3>
+                    <button 
+                        onClick={() => setShowAssets(!showAssets)} 
+                        className="flex items-center gap-1 text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full hover:bg-indigo-100 transition-all"
+                    >
+                        {showAssets ? <><EyeOff size={14}/> Sembunyikan</> : <><Eye size={14}/> Tampilkan</>}
+                    </button>
                 </div>
-              ))}
+                
+                {showAssets && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {parsedPlacements.map(p => (
+                        <div key={p.original} className="bg-white p-3 rounded-xl border flex justify-between items-center shadow-sm">
+                        <div className="flex gap-3 items-center">
+                            <div className={`p-2 rounded-lg ${ASSET_TYPES[p.type]?.bg || 'bg-gray-100'}`}>{ASSET_TYPES[p.type] ? React.createElement(ASSET_TYPES[p.type].icon, {size:18, className: ASSET_TYPES[p.type].color}) : <Wallet/>}</div>
+                            <div><p className="font-bold text-sm">{p.name}</p><p className="text-[10px] text-gray-400">{ASSET_TYPES[p.type]?.label}</p></div>
+                        </div>
+                        <span className="font-bold text-slate-700">{formatCurrency(stats.balances[p.original] || 0)}</span>
+                        </div>
+                    ))}
+                    </div>
+                )}
             </div>
 
             {/* Expense Breakdown */}
