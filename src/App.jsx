@@ -4,7 +4,7 @@ import {
   Activity, LayoutDashboard, Table, Settings, Save, Trash2, Globe, 
   Sparkles, Camera, Loader, Landmark, CreditCard, Coins, Briefcase, 
   ArrowRightLeft, FileText, BarChart3, Building2, Bitcoin, Users, Tags,
-  ChevronRight, Calendar, User, X, Edit3, Filter, Eye, EyeOff // Import Icon Eye
+  ChevronRight, Calendar, User, X, Edit3, Filter, Eye, EyeOff 
 } from 'lucide-react';
 
 // --- CONFIG ---
@@ -12,13 +12,16 @@ import {
 const API_URL = "https://script.google.com/macros/s/AKfycbyOm_at2rcnra8KqMOKiKGwQ_SI3r2SoQCfSl5W2S10UGQbI5U0gr3TEk6TUfctGKlpwg/exec"; 
 
 const callGemini = async (prompt, base64Data = null, mimeType = "image/jpeg") => {
-  const apiKey = "AIzaSyAA3yjQTvQ6zhs13ESwZkrSXFFCECSvL-8"; // <--- PASTE API KEY GEMINI ANDA DI SINI
+  // ⚠️ WAJIB DIISI: Dapatkan kunci di https://aistudio.google.com/app/apikey
+  const apiKey = "AIzaSyAA3yjQTvQ6zhs13ESwZkrSXFFCECSvL-8"; // <--- TEMPEL API KEY ANDA DI DALAM TANDA KUTIP INI
   
-  if (!apiKey && window.location.hostname !== 'localhost') {
-      console.warn("API Key Gemini kosong! Fitur scan tidak akan berjalan.");
+  if (!apiKey) {
+      alert("Gagal: API Key Gemini belum diisi di kode App.jsx!");
+      throw new Error("API Key Kosong");
   }
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+  // Menggunakan model gemini-1.5-flash yang stabil
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
   const parts = [{ text: prompt }];
   if (base64Data) {
@@ -33,15 +36,19 @@ const callGemini = async (prompt, base64Data = null, mimeType = "image/jpeg") =>
     });
     
     if (!response.ok) {
-       if (response.status === 400 || response.status === 403) throw new Error("API Key Invalid.");
-       throw new Error(`Gemini API Error: ${response.statusText}`);
+       const errData = await response.json();
+       console.error("Gemini API Error Detail:", errData);
+       throw new Error(errData.error?.message || `Error ${response.status}: ${response.statusText}`);
     }
     
     const data = await response.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || "Error.";
+    if (!data.candidates || data.candidates.length === 0) {
+        throw new Error("AI tidak memberikan respon.");
+    }
+    return data.candidates[0].content.parts[0].text;
   } catch (error) {
     console.error("Gemini Fetch Error:", error);
-    throw error; // Lempar error agar bisa ditangkap di handleScan
+    throw error; 
   }
 };
 
@@ -116,25 +123,16 @@ export default function App() {
     transactions: [], 
     users: ['Ayah', 'Bunda', 'Kakak', 'Adik'], 
     categories: [
-        // Income
         'Gaji Bulanan', 'Tunjangan Tetap', 'THR', 'Bonus Tahunan', 'Side Hustle', 'Dividen/Bunga', 'Uang Sewa',
-        // Fixed Expenses
         'KPR/Sewa Rumah', 'Listrik/Air/Internet', 'SPP/Pendidikan', 'Cicilan Utang', 'Asuransi', 'Gaji ART',
-        // Routine Expenses
         'Belanja Dapur', 'Belanja Harian', 'Transportasi/BBM', 'Uang Saku Anak', 'Pulsa/Data',
-        // Lifestyle
         'Kondangan/Sumbangan', 'Arisan', 'Zakat/Sedekah', 'Hiburan Keluarga', 'Skincare/Personal',
-        // Saving
         'Dana Darurat', 'Investasi', 'Dana Pensiun', 'Sinking Fund'
     ], 
     placements: [
-        // Cash in Bank
         'Mandiri Ayah:BANK', 'Mandiri Bunda:BANK', 'BRI Ayah:BANK', 'BSI Bunda:BANK', 'Rekening A:BANK', 'Rekening B:BANK', 'Dompet Tunai:BANK',
-        // Investment
         'Saham:INVESTMENT', 'Obligasi:INVESTMENT', 'Pembiayaan:INVESTMENT',
-        // Crypto
         'Kripto:CRYPTO',
-        // Commodity
         'Emas Batangan:COMMODITY', 'Emas Perhiasan:COMMODITY', 'Silver:COMMODITY'
     ], 
     settings: { currency: 'IDR' }
@@ -145,19 +143,16 @@ export default function App() {
   const [notification, setNotification] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiAdvice, setAiAdvice] = useState(null);
-  const [showAssets, setShowAssets] = useState(true); // State untuk Toggle Hide Aset
+  const [showAssets, setShowAssets] = useState(true); 
   
-  // Edit State
   const [editingId, setEditingId] = useState(null);
 
-  // Filter State
   const [filter, setFilter] = useState({ 
     month: new Date().getMonth(), 
     year: new Date().getFullYear(),
-    type: 'month' // 'month' or 'year'
+    type: 'month' 
   });
 
-  // Scan States
   const [scannedTransactions, setScannedTransactions] = useState([]);
   const [isScanning, setIsScanning] = useState(false);
   const [isScanningStatement, setIsScanningStatement] = useState(false);
@@ -258,13 +253,10 @@ export default function App() {
 
   const formatCurrency = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
 
-  // --- STATISTIK & LOGIKA ASET (DENGAN FILTER) ---
   const stats = useMemo(() => {
-    // 1. Hitung Net Worth (Selalu All Time / Sepanjang Masa)
     const balances = {}; 
     data.placements.forEach(p => balances[p] = 0);
     
-    // Proses semua transaksi untuk saldo aset
     data.transactions.forEach(t => {
       const v = Number(t.amount);
       if (t.type === 'income' || t.type === 'adjustment_plus') balances[t.placement] += v;
@@ -282,7 +274,6 @@ export default function App() {
       if(val > 0) assetAlloc[p.type] = (assetAlloc[p.type] || 0) + val;
     });
 
-    // 2. Hitung Cashflow (Income vs Expense) BERDASARKAN FILTER
     let periodIncome = 0;
     let periodExpense = 0;
     const categoryBreakdown = {};
@@ -310,9 +301,9 @@ export default function App() {
     return { balances, net, assetAlloc, periodIncome, periodExpense, sortedCats };
   }, [data, parsedPlacements, filter]);
 
-  // --- PERBAIKAN LOGIKA SCAN (MIME TYPE & JSON PARSING) ---
+  // --- LOGIKA SCAN (UPDATED WITH ERROR HANDLING) ---
   const handleScan = async (file, type) => {
-    if (!file) return; // Mencegah error jika cancel file picker
+    if (!file) return; 
     const isStatement = type === 'statement';
     if(isStatement) setIsScanningStatement(true); else setIsScanning(true);
     
@@ -320,7 +311,7 @@ export default function App() {
     reader.onloadend = async () => {
       try {
         const b64 = reader.result.split(',')[1];
-        const mimeType = file.type || "image/jpeg"; // Otomatis deteksi tipe file (PDF/PNG/JPG)
+        const mimeType = file.type || "image/jpeg"; 
 
         let prompt;
         if (isStatement) {
@@ -329,19 +320,12 @@ export default function App() {
            prompt = `Analyze receipt. Return JSON object with fields: amount (number), date (YYYY-MM-DD), category, note, placement (guess from ${data.placements.join(',')}). Return ONLY raw JSON.`;
         }
 
-        // Panggil Gemini dengan MimeType yang benar
         const txt = await callGemini(prompt, b64, mimeType);
         
-        // Bersihkan hasil JSON dari format Markdown (```json ... ```)
+        // Bersihkan JSON
         let cleanJson = txt.replace(/```json/g, '').replace(/```/g, '').trim();
-        
-        // Cari kurung kurawal/siku pertama dan terakhir untuk memastikan hanya JSON yang diambil
-        const firstChar = isStatement ? '[' : '{';
-        const lastChar = isStatement ? ']' : '}';
-        // Jika statement biasanya dalam object { transactions: [...] }
         const jsonStart = cleanJson.indexOf('{'); 
         const jsonEnd = cleanJson.lastIndexOf('}');
-        
         if (jsonStart !== -1 && jsonEnd !== -1) {
             cleanJson = cleanJson.substring(jsonStart, jsonEnd + 1);
         }
@@ -362,7 +346,7 @@ export default function App() {
         }
       } catch(e) { 
           console.error("Scan Error Full:", e);
-          showNotification("Gagal Scan. Cek konsol/file."); 
+          alert(`Gagal Scan: ${e.message}`); // Tampilkan pesan error ke user
       }
       if(isStatement) setIsScanningStatement(false); else setIsScanning(false);
     };
