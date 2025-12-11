@@ -13,7 +13,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbyOm_at2rcnra8KqMOKiKGw
 
 const callGemini = async (prompt, base64Data = null, mimeType = "image/jpeg") => {
   // ⚠️ WAJIB DIISI: Dapatkan kunci di https://aistudio.google.com/app/apikey
-  const apiKey = "AIzaSyAA3yjQTvQ6zhs13ESwZkrSXFFCECSvL-8"; // <--- TEMPEL API KEY ANDA DI DALAM TANDA KUTIP INI
+  const apiKey = "AIzaSyDFdKvqD1GZYu5IpQzN3tP5uXkQCcMIZX8"; // <--- TEMPEL API KEY ANDA DI DALAM TANDA KUTIP INI
   
   if (!apiKey) {
       alert("Gagal: API Key Gemini belum diisi di kode App.jsx!");
