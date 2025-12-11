@@ -8,98 +8,51 @@ import {
 } from 'lucide-react';
 
 // --- CONFIG ---
-// GANTI DENGAN URL DEPLOYMENT GOOGLE APPS SCRIPT ANDA
-const API_URL = "https://script.google.com/macros/s/AKfycbwVbjfemQ97nVMHLNd_OOaWM2fWKjTvCyGeD9zLzS55XaxcWacDRDJJmPvSmk6eCBeqqg/exec"; 
+const API_URL = "https://script.google.https://script.google.com/macros/s/AKfycbzimklZxaTj5zjlUY97omiE6zrVIPkV1Ff5Reapem00023_bVPIFxhZBPp54PfcOP29VQ/exec"; 
 
 const callGemini = async (prompt, base64Data = null, mimeType = "image/jpeg") => {
-  const apiKey = "AIzaSyAA3yjQTvQ6zhs13ESwZkrSXFFCECSvL-8"; // <--- PASTE API KEY GEMINI ANDA DI SINI
-  
-  if (!apiKey && window.location.hostname !== 'localhost') {
-      console.warn("API Key Gemini kosong! Fitur scan tidak akan berjalan.");
-  }
+  const apiKey = "AIzaSyAA3yjQTvQ6zhs13ESwZkrSXFFCECSvL-8"; // <--- PASTE API KEY
+  if (!apiKey && window.location.hostname !== 'localhost') console.warn("API Key Gemini kosong!");
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-
   const parts = [{ text: prompt }];
-  if (base64Data) {
-    parts.push({ inlineData: { mimeType: mimeType, data: base64Data } });
-  }
+  if (base64Data) parts.push({ inlineData: { mimeType: mimeType, data: base64Data } });
 
   try {
     const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ contents: [{ parts }] })
     });
-    
-    if (!response.ok) {
-       if (response.status === 400 || response.status === 403) throw new Error("API Key Invalid.");
-       throw new Error(`Gemini API Error: ${response.statusText}`);
-    }
-    
+    if (!response.ok) throw new Error("API Key Invalid");
     const data = await response.json();
     return data.candidates?.[0]?.content?.parts?.[0]?.text || "Error.";
-  } catch (error) {
-    console.error(error);
-    return "Gagal memproses AI.";
-  }
+  } catch (error) { return "Gagal memproses AI."; }
 };
 
 const DataService = {
   fetchData: async () => {
-    try {
-      const res = await fetch(API_URL);
-      return await res.json();
-    } catch (e) { return null; }
+    try { const res = await fetch(API_URL); return await res.json(); } catch (e) { return null; }
   },
-
   addTransaction: async (tx) => {
-    await fetch(API_URL, {
-      method: 'POST', mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'add', ...tx })
-    });
+    await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'add', ...tx }) });
   },
-
   updateTransaction: async (tx) => {
-    await fetch(API_URL, {
-      method: 'POST', mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'edit', ...tx })
-    });
+    await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'edit', ...tx }) });
   },
-
   deleteTransaction: async (id) => {
-    await fetch(API_URL, {
-      method: 'POST', mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'delete', id: id })
-    });
+    // Force ID to string
+    await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'delete', id: String(id) }) });
   },
-
   manageSetting: async (action, type, value) => {
-    await fetch(API_URL, {
-      method: 'POST', mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: action, settingType: type, value: value })
-    });
+    await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: action, settingType: type, value: value }) });
   }
 };
 
-const Card = ({ children, className = "" }) => (
-  <div className={`bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden ${className}`}>{children}</div>
-);
+const Card = ({ children, className = "" }) => <div className={`bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden ${className}`}>{children}</div>;
 
 const Badge = ({ type, children }) => {
-  const colors = {
-    income: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-    expense: 'bg-rose-100 text-rose-700 border-rose-200',
-    transfer: 'bg-blue-100 text-blue-700 border-blue-200',
-    adjustment_plus: 'bg-amber-100 text-amber-700 border-amber-200',
-    adjustment_minus: 'bg-amber-100 text-amber-700 border-amber-200',
-    neutral: 'bg-slate-100 text-slate-700 border-slate-200'
-  };
-  return <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${colors[type] || colors.neutral}`}>{children}</span>;
+  const colors = { income: 'bg-emerald-100 text-emerald-700', expense: 'bg-rose-100 text-rose-700', transfer: 'bg-blue-100 text-blue-700', adjustment_plus: 'bg-amber-100 text-amber-700', adjustment_minus: 'bg-amber-100 text-amber-700', neutral: 'bg-slate-100 text-slate-700' };
+  return <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${colors[type] || colors.neutral} border-opacity-20`}>{children}</span>;
 };
 
 const ASSET_TYPES = {
@@ -118,11 +71,7 @@ export default function App() {
   const [notification, setNotification] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiAdvice, setAiAdvice] = useState(null);
-  
-  // Edit State
   const [editingId, setEditingId] = useState(null);
-
-  // Scan States
   const [scannedTransactions, setScannedTransactions] = useState([]);
   const [isScanning, setIsScanning] = useState(false);
   const [isScanningStatement, setIsScanningStatement] = useState(false);
@@ -172,16 +121,11 @@ export default function App() {
     if (parsedPlacements.length && !formData.placement) setFormData(p => ({...p, placement: parsedPlacements[0].original}));
   }, [data.categories, data.users, parsedPlacements]);
 
-  // --- TRANSAKSI (ADD / UPDATE) ---
   const handleSaveTransaction = async (e) => {
     e.preventDefault();
-    
     if (editingId) {
         const updatedTx = { id: editingId, ...formData, amount: Number(formData.amount) };
-        setData(prev => ({
-            ...prev,
-            transactions: prev.transactions.map(t => t.id === editingId ? updatedTx : t)
-        }));
+        setData(prev => ({ ...prev, transactions: prev.transactions.map(t => t.id === editingId ? updatedTx : t) }));
         showNotification("Mengupdate data...");
         await DataService.updateTransaction(updatedTx);
         showNotification("Data berhasil diubah!");
@@ -193,38 +137,21 @@ export default function App() {
         await DataService.addTransaction(newTx);
         showNotification("Tersimpan!");
     }
-    
     setFormData(prev => ({ ...prev, amount: '', note: '' }));
     setView('dashboard');
   };
 
   const handleEditClick = (tx) => {
-    setFormData({
-        type: tx.type,
-        amount: tx.amount,
-        category: tx.category,
-        date: tx.date,
-        note: tx.note,
-        user: tx.user,
-        placement: tx.placement,
-        toPlacement: tx.toPlacement || ''
-    });
+    setFormData({ type: tx.type, amount: tx.amount, category: tx.category, date: tx.date, note: tx.note, user: tx.user, placement: tx.placement, toPlacement: tx.toPlacement || '' });
     setEditingId(tx.id);
     setView('add');
     showNotification("Masuk mode edit.");
   };
 
-  const handleCancelEdit = () => {
-    setEditingId(null);
-    setFormData(prev => ({ ...prev, amount: '', note: '' }));
-    showNotification("Edit dibatalkan.");
-  };
-
   const handleDelete = async (id) => {
     if(confirm("Hapus data ini?")) {
-      // Force string conversion for safety
       setData(prev => ({ ...prev, transactions: prev.transactions.filter(t => String(t.id) !== String(id)) }));
-      await DataService.deleteTransaction(id);
+      await DataService.deleteTransaction(String(id));
     }
   };
 
@@ -234,77 +161,48 @@ export default function App() {
     const balances = {}; 
     data.placements.forEach(p => balances[p] = 0);
     let net = 0;
-
     data.transactions.forEach(t => {
       const v = Number(t.amount);
       if (t.type === 'income' || t.type === 'adjustment_plus') balances[t.placement] += v;
       if (t.type === 'expense' || t.type === 'adjustment_minus') balances[t.placement] -= v;
-      if (t.type === 'transfer') {
-        balances[t.placement] -= v;
-        if(t.toPlacement) balances[t.toPlacement] += v;
-      }
+      if (t.type === 'transfer') { balances[t.placement] -= v; if(t.toPlacement) balances[t.toPlacement] += v; }
     });
-    
     net = Object.values(balances).reduce((a,b)=>a+b, 0);
     const assetAlloc = {};
     parsedPlacements.forEach(p => {
       const val = balances[p.original] || 0;
       if(val > 0) assetAlloc[p.type] = (assetAlloc[p.type] || 0) + val;
     });
-
     return { balances, net, assetAlloc };
   }, [data, parsedPlacements]);
 
   const handleScan = async (file, type) => {
     const isStatement = type === 'statement';
     if(isStatement) setIsScanningStatement(true); else setIsScanning(true);
-
     const reader = new FileReader();
     reader.onloadend = async () => {
       try {
-        const b64 = reader.result.replace("data:", "").replace(/^.+,/, "");
-        const mime = file.type || "image/jpeg";
+        const b64 = reader.result.split(',')[1];
         let prompt;
-        
-        if (isStatement) {
-           prompt = `Analyze bank statement. Extract transactions to JSON array "transactions" with fields: date (YYYY-MM-DD), note, amount (number), type (income/expense), category (from list: ${data.categories.join(',')}).`;
-        } else {
-           prompt = `Analyze receipt. Return JSON object with fields: amount (number), date (YYYY-MM-DD), category, note, placement (guess from ${data.placements.join(',')}).`;
-        }
-
-        const txt = await callGemini(prompt, b64, mime);
+        if (isStatement) prompt = `Analyze bank statement. Extract JSON array "transactions": date, note, amount, type (income/expense), category.`;
+        else prompt = `Analyze receipt. JSON: {amount, date, category, note, placement}`;
+        const txt = await callGemini(prompt, b64);
         const json = JSON.parse(txt.replace(/```json|```/g, ''));
-
         if (isStatement && json.transactions) {
             setScannedTransactions(json.transactions.map((t, i) => ({...t, tempId: i, selected: true})));
             showNotification(`Ditemukan ${json.transactions.length} transaksi.`);
         } else {
-          setFormData(p => ({
-            ...p, 
-            ...json, 
-            type: 'expense',
-            placement: json.placement && data.placements.includes(json.placement) ? json.placement : parsedPlacements[0]?.original
-          }));
+          setFormData(p => ({...p, ...json, type: 'expense'}));
           showNotification("Scan Berhasil!");
         }
-      } catch(e) { showNotification("Gagal Scan"); console.error(e); }
+      } catch(e) { showNotification("Gagal Scan"); }
       if(isStatement) setIsScanningStatement(false); else setIsScanning(false);
     };
     reader.readAsDataURL(file);
   };
 
   const commitScannedTransactions = async () => {
-    const toAdd = scannedTransactions.filter(t => t.selected).map(t => ({
-      id: Date.now().toString() + Math.random().toString().substr(2, 5),
-      type: t.type || 'expense',
-      amount: Number(t.amount),
-      category: t.category || 'Other',
-      date: t.date,
-      note: t.note,
-      user: data.users[0], 
-      placement: parsedPlacements[0]?.original 
-    }));
-
+    const toAdd = scannedTransactions.filter(t => t.selected).map(t => ({ id: Date.now().toString() + Math.random().toString().substr(2, 5), type: t.type || 'expense', amount: Number(t.amount), category: t.category || 'Other', date: t.date, note: t.note, user: data.users[0], placement: parsedPlacements[0]?.original }));
     showNotification(`Menyimpan ${toAdd.length} data...`);
     setData(prev => ({ ...prev, transactions: [...toAdd, ...prev.transactions] }));
     for (const tx of toAdd) { await DataService.addTransaction(tx); }
@@ -312,26 +210,14 @@ export default function App() {
     showNotification("Selesai import!");
   };
 
-  const updateScannedTransaction = (index, field, value) => {
-    const updated = [...scannedTransactions];
-    updated[index][field] = value;
-    setScannedTransactions(updated);
-  };
-
   const handleAnalyzeFinances = async () => {
     setIsAnalyzing(true);
-    setAiAdvice(null);
     try {
       const recentTx = data.transactions.slice(0, 20); 
-      const assetContext = JSON.stringify(stats.assetAlloc);
-      const prompt = `Act as a financial advisor. My Asset Portfolio (IDR): ${assetContext}. Recent transactions (IDR): ${JSON.stringify(recentTx)}. Total Net Worth: ${stats.net}. Provide: 1. Analysis of my Asset Allocation. 2. 3 actionable financial tips in Indonesian.`;
-      const response = await callGemini(prompt);
-      setAiAdvice(response);
-    } catch (err) {
-      showNotification("Gagal menganalisa.");
-    } finally {
-      setIsAnalyzing(false);
-    }
+      const prompt = `Act as financial advisor. Asset Portfolio (IDR): ${JSON.stringify(stats.assetAlloc)}. Recent Tx: ${JSON.stringify(recentTx)}. Net Worth: ${stats.net}. Provide Analysis & 3 Tips (Indonesian).`;
+      setAiAdvice(await callGemini(prompt));
+    } catch (err) { showNotification("Gagal menganalisa."); }
+    setIsAnalyzing(false);
   };
 
   const getCleanName = (raw) => raw ? raw.split(':')[0] : 'Unknown';
@@ -358,36 +244,23 @@ export default function App() {
               <p className="text-xs uppercase opacity-80">Total Aset</p>
               <h2 className="text-4xl font-bold">{formatCurrency(stats.net)}</h2>
             </Card>
-            
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {parsedPlacements.map(p => (
                 <div key={p.original} className="bg-white p-3 rounded-xl border flex justify-between items-center shadow-sm">
                   <div className="flex gap-3 items-center">
-                    <div className={`p-2 rounded-lg ${ASSET_TYPES[p.type]?.bg || 'bg-gray-100'}`}>
-                      {ASSET_TYPES[p.type] ? React.createElement(ASSET_TYPES[p.type].icon, {size:18, className: ASSET_TYPES[p.type].color}) : <Wallet/>}
-                    </div>
-                    <div>
-                      <p className="font-bold text-sm">{p.name}</p>
-                      <p className="text-[10px] text-gray-400">{ASSET_TYPES[p.type]?.label}</p>
-                    </div>
+                    <div className={`p-2 rounded-lg ${ASSET_TYPES[p.type]?.bg || 'bg-gray-100'}`}>{ASSET_TYPES[p.type] ? React.createElement(ASSET_TYPES[p.type].icon, {size:18, className: ASSET_TYPES[p.type].color}) : <Wallet/>}</div>
+                    <div><p className="font-bold text-sm">{p.name}</p><p className="text-[10px] text-gray-400">{ASSET_TYPES[p.type]?.label}</p></div>
                   </div>
                   <span className="font-bold text-slate-700">{formatCurrency(stats.balances[p.original] || 0)}</span>
                 </div>
               ))}
             </div>
-
             <Card className="p-6 bg-gradient-to-r from-white to-indigo-50/30 border border-indigo-100">
                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                   <h3 className="font-bold text-lg text-indigo-900 flex items-center gap-2"><Sparkles size={18}/> AI Advisor</h3>
-                  <button onClick={handleAnalyzeFinances} disabled={isAnalyzing} className="w-full sm:w-auto text-sm bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50">
-                    {isAnalyzing ? 'Menganalisa...' : 'Analisa Portfolio'}
-                  </button>
+                  <button onClick={handleAnalyzeFinances} disabled={isAnalyzing} className="w-full sm:w-auto text-sm bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50">{isAnalyzing ? 'Menganalisa...' : 'Analisa Portfolio'}</button>
                </div>
-               {aiAdvice ? (
-                   <div className="prose prose-sm text-slate-700 whitespace-pre-wrap">{aiAdvice}</div>
-               ) : (
-                   <p className="text-sm text-slate-500 italic">Dapatkan analisa aset cerdas dengan sekali klik.</p>
-               )}
+               {aiAdvice ? <div className="prose prose-sm text-slate-700 whitespace-pre-wrap">{aiAdvice}</div> : <p className="text-sm text-slate-500 italic">Dapatkan analisa aset cerdas dengan sekali klik.</p>}
             </Card>
           </div>
         )}
@@ -396,106 +269,41 @@ export default function App() {
           <Card className="p-6">
             <div className="flex justify-between mb-4 items-center">
               <h2 className="font-bold text-lg">{editingId ? "Edit Transaksi" : "Input Transaksi"}</h2>
-              {editingId ? (
-                  <button onClick={handleCancelEdit} className="text-xs bg-red-100 text-red-600 px-3 py-1 rounded-full font-bold">Batal Edit</button>
-              ) : (
+              {editingId ? <button onClick={()=>setEditingId(null)} className="text-xs bg-red-100 text-red-600 px-3 py-1 rounded-full font-bold">Batal Edit</button> : (
                   <div className="flex gap-2">
-                    <button onClick={()=>fileInputRef.current.click()} disabled={isScanning} className="bg-slate-100 p-2 rounded flex gap-2 text-xs font-bold items-center">
-                        {isScanning ? <Loader size={14} className="animate-spin"/> : <Camera size={14}/>} Resi
-                    </button>
-                    <input type="file" ref={fileInputRef} hidden accept="image/*" onChange={e=>handleScan(e.target.files[0], 'receipt')}/>
-                    
-                    <button onClick={()=>statementInputRef.current.click()} disabled={isScanningStatement} className="bg-slate-100 p-2 rounded flex gap-2 text-xs font-bold items-center">
-                        {isScanningStatement ? <Loader size={14} className="animate-spin"/> : <FileText size={14}/>} PDF
-                    </button>
+                    <button onClick={()=>fileInputRef.current.click()} disabled={isScanning} className="bg-slate-100 p-2 rounded flex gap-2 text-xs font-bold items-center">{isScanning ? <Loader size={14} className="animate-spin"/> : <Camera size={14}/>} Resi</button>
+                    <input type="file" ref={fileInputRef} hidden onChange={e=>handleScan(e.target.files[0], 'receipt')}/>
+                    <button onClick={()=>statementInputRef.current.click()} disabled={isScanningStatement} className="bg-slate-100 p-2 rounded flex gap-2 text-xs font-bold items-center">{isScanningStatement ? <Loader size={14} className="animate-spin"/> : <FileText size={14}/>} PDF</button>
                     <input type="file" ref={statementInputRef} hidden accept="image/*,application/pdf" onChange={e=>handleScan(e.target.files[0], 'statement')}/>
                   </div>
               )}
             </div>
-
             {scannedTransactions.length > 0 ? (
                 <div className="border rounded-lg overflow-hidden">
-                    <div className="bg-indigo-50 p-3 border-b border-indigo-100 flex justify-between items-center">
-                        <h3 className="font-bold text-indigo-900 text-sm">Hasil Scan ({scannedTransactions.length})</h3>
-                        <button onClick={() => setScannedTransactions([])} className="text-xs text-red-500 font-bold">Batal</button>
-                    </div>
+                    <div className="bg-indigo-50 p-3 border-b border-indigo-100 flex justify-between items-center"><h3 className="font-bold text-indigo-900 text-sm">Hasil Scan ({scannedTransactions.length})</h3><button onClick={() => setScannedTransactions([])} className="text-xs text-red-500 font-bold">Batal</button></div>
                     <div className="max-h-80 overflow-y-auto bg-slate-50 p-2 space-y-2">
                         {scannedTransactions.map((t, idx) => (
                             <div key={idx} className={`bg-white p-3 rounded-lg border shadow-sm ${t.selected ? 'border-indigo-300' : 'border-slate-200 opacity-60'}`}>
-                                <div className="flex justify-between items-start mb-2">
-                                    <div className="flex items-center gap-2">
-                                        <input type="checkbox" checked={t.selected} onChange={e=>{const n=[...scannedTransactions];n[idx].selected=e.target.checked;setScannedTransactions(n)}} className="w-4 h-4 rounded text-indigo-600"/>
-                                        <span className="text-xs font-bold text-slate-500">{t.date}</span>
-                                    </div>
-                                    <span className="font-mono font-bold text-sm">{formatCurrency(t.amount)}</span>
-                                </div>
+                                <div className="flex justify-between items-start mb-2"><div className="flex items-center gap-2"><input type="checkbox" checked={t.selected} onChange={e=>{const n=[...scannedTransactions];n[idx].selected=e.target.checked;setScannedTransactions(n)}} className="w-4 h-4 rounded text-indigo-600"/><span className="text-xs font-bold text-slate-500">{t.date}</span></div><span className="font-mono font-bold text-sm">{formatCurrency(t.amount)}</span></div>
                                 <p className="text-sm text-slate-800 mb-2 line-clamp-1">{t.note}</p>
-                                <div className="flex gap-2">
-                                    <select value={t.type} onChange={e => updateScannedTransaction(idx, 'type', e.target.value)} className="text-xs border rounded p-1 bg-slate-50">
-                                        <option value="expense">Exp</option><option value="income">Inc</option>
-                                    </select>
-                                    <select value={t.category || 'Other'} onChange={e => updateScannedTransaction(idx, 'category', e.target.value)} className="text-xs border rounded p-1 bg-slate-50 flex-1">
-                                        {data.categories.map(c => <option key={c} value={c}>{c}</option>)}
-                                    </select>
-                                </div>
+                                <div className="flex gap-2"><select value={t.type} onChange={e => updateScannedTransaction(idx, 'type', e.target.value)} className="text-xs border rounded p-1 bg-slate-50"><option value="expense">Exp</option><option value="income">Inc</option></select><select value={t.category || 'Other'} onChange={e => updateScannedTransaction(idx, 'category', e.target.value)} className="text-xs border rounded p-1 bg-slate-50 flex-1">{data.categories.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
                             </div>
                         ))}
                     </div>
-                    <div className="p-3 bg-white border-t">
-                        <button onClick={commitScannedTransactions} className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold shadow hover:bg-indigo-700">Simpan Semua</button>
-                    </div>
+                    <div className="p-3 bg-white border-t"><button onClick={commitScannedTransactions} className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold shadow hover:bg-indigo-700">Simpan Semua</button></div>
                 </div>
             ) : (
                 <form onSubmit={handleSaveTransaction} className="space-y-4">
-                <div className="grid grid-cols-4 gap-2">
-                    {['expense','income','transfer','adjustment_plus'].map(t => (
-                    <button key={t} type="button" onClick={()=>setFormData({...formData, type:t})} 
-                        className={`p-2 rounded text-[10px] font-bold uppercase border ${formData.type===t?'bg-indigo-50 border-indigo-500 text-indigo-700':'bg-white text-gray-400'}`}>
-                        {t.replace('_plus','+')}
-                    </button>
-                    ))}
-                </div>
-                
-                <div>
-                    <label className="text-xs font-bold text-gray-500">Nominal</label>
-                    <input type="number" value={formData.amount} onChange={e=>setFormData({...formData, amount:e.target.value})} className="w-full p-3 border rounded-lg text-lg font-bold" placeholder="0" required/>
-                </div>
-
+                <div className="grid grid-cols-4 gap-2">{['expense','income','transfer','adjustment_plus'].map(t => (<button key={t} type="button" onClick={()=>setFormData({...formData, type:t})} className={`p-2 rounded text-[10px] font-bold uppercase border ${formData.type===t?'bg-indigo-50 border-indigo-500 text-indigo-700':'bg-white text-gray-400'}`}>{t.replace('_plus','+')}</button>))}</div>
+                <div><label className="text-xs font-bold text-gray-500">Nominal</label><input type="number" value={formData.amount} onChange={e=>setFormData({...formData, amount:e.target.value})} className="w-full p-3 border rounded-lg text-lg font-bold" placeholder="0" required/></div>
                 <div className="grid grid-cols-2 gap-4">
                     {formData.type === 'transfer' ? (
-                    <>
-                        <div><label className="text-xs font-bold text-gray-500">Dari</label>
-                        <select className="w-full p-2 border rounded" value={formData.placement} onChange={e=>setFormData({...formData, placement:e.target.value})}>
-                        {parsedPlacements.map(p=><option key={p.original} value={p.original}>{p.name}</option>)}
-                        </select></div>
-                        <div><label className="text-xs font-bold text-gray-500">Ke</label>
-                        <select className="w-full p-2 border rounded" value={formData.toPlacement} onChange={e=>setFormData({...formData, toPlacement:e.target.value})}>
-                        {parsedPlacements.map(p=><option key={p.original} value={p.original}>{p.name}</option>)}
-                        </select></div>
-                    </>
-                    ) : (
-                    <div className="col-span-2">
-                        <label className="text-xs font-bold text-gray-500">Akun / Aset</label>
-                        <select className="w-full p-2 border rounded" value={formData.placement} onChange={e=>setFormData({...formData, placement:e.target.value})}>
-                        {parsedPlacements.map(p=><option key={p.original} value={p.original}>{p.name}</option>)}
-                        </select>
-                    </div>
-                    )}
+                    <><div><label className="text-xs font-bold text-gray-500">Dari</label><select className="w-full p-2 border rounded" value={formData.placement} onChange={e=>setFormData({...formData, placement:e.target.value})}>{parsedPlacements.map(p=><option key={p.original} value={p.original}>{p.name}</option>)}</select></div><div><label className="text-xs font-bold text-gray-500">Ke</label><select className="w-full p-2 border rounded" value={formData.toPlacement} onChange={e=>setFormData({...formData, toPlacement:e.target.value})}>{parsedPlacements.map(p=><option key={p.original} value={p.original}>{p.name}</option>)}</select></div></>
+                    ) : (<div className="col-span-2"><label className="text-xs font-bold text-gray-500">Akun / Aset</label><select className="w-full p-2 border rounded" value={formData.placement} onChange={e=>setFormData({...formData, placement:e.target.value})}>{parsedPlacements.map(p=><option key={p.original} value={p.original}>{p.name}</option>)}</select></div>)}
                 </div>
-
-                {(formData.type === 'income' || formData.type === 'expense') && (
-                    <div><label className="text-xs font-bold text-gray-500">Kategori</label>
-                    <select className="w-full p-2 border rounded" value={formData.category} onChange={e=>setFormData({...formData, category:e.target.value})}>
-                    {data.categories.map(c=><option key={c} value={c}>{c}</option>)}
-                    </select></div>
-                )}
-
-                <input type="date" className="w-full p-2 border rounded" value={formData.date} onChange={e=>setFormData({...formData, date:e.target.value})}/>
-                <input type="text" className="w-full p-2 border rounded" placeholder="Catatan" value={formData.note} onChange={e=>setFormData({...formData, note:e.target.value})}/>
-                
-                <button type="submit" className={`w-full py-3 text-white font-bold rounded-lg ${editingId ? 'bg-amber-500 hover:bg-amber-600' : 'bg-indigo-600 hover:bg-indigo-700'}`}>
-                    {editingId ? 'Update Data' : 'Simpan Data'}
-                </button>
+                {(formData.type === 'income' || formData.type === 'expense') && (<div><label className="text-xs font-bold text-gray-500">Kategori</label><select className="w-full p-2 border rounded" value={formData.category} onChange={e=>setFormData({...formData, category:e.target.value})}>{data.categories.map(c=><option key={c} value={c}>{c}</option>)}</select></div>)}
+                <div className="grid grid-cols-2 gap-2"><input type="date" className="w-full p-2 border rounded" value={formData.date} onChange={e=>setFormData({...formData, date:e.target.value})}/><input type="text" className="w-full p-2 border rounded" placeholder="Catatan" value={formData.note} onChange={e=>setFormData({...formData, note:e.target.value})}/></div>
+                <button type="submit" className={`w-full py-3 text-white font-bold rounded-lg ${editingId ? 'bg-amber-500 hover:bg-amber-600' : 'bg-indigo-600 hover:bg-indigo-700'}`}>{editingId ? 'Update Data' : 'Simpan Data'}</button>
                 </form>
             )}
           </Card>
@@ -505,21 +313,9 @@ export default function App() {
           <div className="space-y-3">
             {data.transactions.slice().reverse().map(t => (
               <div key={t.id} className="bg-white p-3 rounded-lg border flex justify-between items-center shadow-sm">
-                <div>
-                  <div className="flex gap-2 text-xs font-bold text-gray-500 mb-1">
-                    <span>{t.date}</span> • <span>{t.user}</span>
-                  </div>
-                  <div className="font-bold text-sm text-slate-800">{t.note || t.category}</div>
-                  <div className="text-xs text-indigo-600 mt-1">{getCleanName(t.placement)} {t.toPlacement && `→ ${getCleanName(t.toPlacement)}`}</div>
-                </div>
-                <div className="text-right">
-                  <div className={`font-mono font-bold ${t.type==='income'?'text-emerald-600':t.type==='expense'?'text-rose-600':'text-slate-600'}`}>
-                    {formatCurrency(t.amount)}
-                  </div>
-                  <div className="flex gap-2 justify-end mt-1">
-                    <button onClick={()=>handleEditClick(t)} className="text-xs text-amber-500 flex items-center gap-1 bg-amber-50 px-2 py-1 rounded hover:bg-amber-100"><Edit3 size={12}/> Edit</button>
-                    <button onClick={()=>handleDelete(t.id)} className="text-xs text-red-500 flex items-center gap-1 bg-red-50 px-2 py-1 rounded hover:bg-red-100"><Trash2 size={12}/> Hapus</button>
-                  </div>
+                <div><div className="flex gap-2 text-xs font-bold text-gray-500 mb-1"><span>{t.date}</span> • <span>{t.user}</span></div><div className="font-bold text-sm text-slate-800">{t.note || t.category}</div><div className="text-xs text-indigo-600 mt-1">{getCleanName(t.placement)} {t.toPlacement && `→ ${getCleanName(t.toPlacement)}`}</div></div>
+                <div className="text-right"><div className={`font-mono font-bold ${t.type==='income'?'text-emerald-600':t.type==='expense'?'text-rose-600':'text-slate-600'}`}>{formatCurrency(t.amount)}</div>
+                  <div className="flex gap-2 justify-end mt-1"><button onClick={()=>handleEditClick(t)} className="text-xs text-amber-500 flex items-center gap-1 bg-amber-50 px-2 py-1 rounded hover:bg-amber-100"><Edit3 size={12}/> Edit</button><button onClick={()=>handleDelete(t.id)} className="text-xs text-red-500 flex items-center gap-1 bg-red-50 px-2 py-1 rounded hover:bg-red-100"><Trash2 size={12}/> Hapus</button></div>
                 </div>
               </div>
             ))}
@@ -529,65 +325,14 @@ export default function App() {
         {view === 'settings' && (
           <Card className="p-6 space-y-8">
             <h2 className="font-bold text-xl">Pengaturan</h2>
-            
-            {/* MANAGE ASSETS */}
-            <div>
-              <label className="text-sm font-bold text-gray-500 block mb-2">Daftar Aset</label>
-              <div className="space-y-2">
-                {parsedPlacements.map(p => (
-                  <div key={p.original} className="flex justify-between p-2 bg-slate-50 rounded border items-center">
-                    <span className="text-sm font-bold">{p.name} <span className="text-[10px] text-gray-400 font-normal uppercase">{p.type}</span></span>
-                    <button onClick={()=>handleDeleteSetting('PLACEMENT', p.original)}><X size={14} className="text-red-400"/></button>
-                  </div>
-                ))}
-                <button onClick={()=>{
-                  const name=prompt("Nama Aset (Misal: Emas):"); if(!name) return;
-                  const type=prompt("Tipe (BANK, INVESTMENT, CRYPTO, COMMODITY, PROPERTY):"); 
-                  handleAddSetting('PLACEMENT', `${name}:${type?type.toUpperCase():'OTHER'}`);
-                }} className="w-full p-2 border border-dashed rounded text-sm text-indigo-500 font-bold hover:bg-indigo-50">+ Tambah Aset</button>
-              </div>
-            </div>
-
-            {/* MANAGE CATEGORIES */}
-            <div>
-              <label className="text-sm font-bold text-gray-500 block mb-2">Kategori</label>
-              <div className="flex flex-wrap gap-2">
-                {data.categories.map(c => (
-                  <span key={c} className="px-3 py-1 bg-slate-100 rounded-full text-xs font-bold flex items-center gap-1 border border-slate-200">
-                    {c} <button onClick={()=>handleDeleteSetting('CATEGORY', c)} className="text-red-400 ml-1">×</button>
-                  </span>
-                ))}
-                <button onClick={()=>{
-                  const v=prompt("Kategori Baru:"); if(v) handleAddSetting('CATEGORY', v);
-                }} className="px-3 py-1 border border-dashed rounded-full text-xs font-bold text-indigo-500 hover:bg-indigo-50">+ Tambah</button>
-              </div>
-            </div>
-
-            {/* MANAGE USERS */}
-            <div>
-              <label className="text-sm font-bold text-gray-500 block mb-2">User / Anggota</label>
-              <div className="flex flex-wrap gap-2">
-                {data.users.map(u => (
-                  <span key={u} className="px-3 py-1 bg-slate-100 rounded-full text-xs font-bold flex items-center gap-1 border border-slate-200">
-                    {u} <button onClick={()=>handleDeleteSetting('USER', u)} className="text-red-400 ml-1">×</button>
-                  </span>
-                ))}
-                <button onClick={()=>{
-                  const v=prompt("User Baru:"); if(v) handleAddSetting('USER', v);
-                }} className="px-3 py-1 border border-dashed rounded-full text-xs font-bold text-indigo-500 hover:bg-indigo-50">+ Tambah</button>
-              </div>
-            </div>
+            <div><label className="text-sm font-bold text-gray-500 block mb-2">Daftar Aset</label><div className="space-y-2">{parsedPlacements.map(p => (<div key={p.original} className="flex justify-between p-2 bg-slate-50 rounded border items-center"><span className="text-sm font-bold">{p.name} <span className="text-[10px] text-gray-400 font-normal uppercase">{p.type}</span></span><button onClick={()=>handleDeleteSetting('PLACEMENT', p.original)}><X size={14} className="text-red-400"/></button></div>))}<button onClick={()=>{const name=prompt("Nama Aset (Misal: Emas):"); if(!name) return; const type=prompt("Tipe (BANK, INVESTMENT, CRYPTO, COMMODITY, PROPERTY):"); handleAddSetting('PLACEMENT', `${name}:${type?type.toUpperCase():'OTHER'}`);}} className="w-full p-2 border border-dashed rounded text-sm text-indigo-500 font-bold">+ Tambah Aset</button></div></div>
+            <div><label className="text-sm font-bold text-gray-500 block mb-2">Kategori</label><div className="flex flex-wrap gap-2">{data.categories.map(c => (<span key={c} className="px-3 py-1 bg-slate-100 rounded-full text-xs font-bold flex items-center gap-1 border border-slate-200">{c} <button onClick={()=>handleDeleteSetting('CATEGORY', c)} className="text-red-400 ml-1">×</button></span>))}<button onClick={()=>{const v=prompt("Kategori Baru:"); if(v) handleAddSetting('CATEGORY', v);}} className="px-3 py-1 border border-dashed rounded-full text-xs font-bold text-indigo-500 hover:bg-indigo-50">+ Tambah</button></div></div>
+            <div><label className="text-sm font-bold text-gray-500 block mb-2">User / Anggota</label><div className="flex flex-wrap gap-2">{data.users.map(u => (<span key={u} className="px-3 py-1 bg-slate-100 rounded-full text-xs font-bold flex items-center gap-1 border border-slate-200">{u} <button onClick={()=>handleDeleteSetting('USER', u)} className="text-red-400 ml-1">×</button></span>))}<button onClick={()=>{const v=prompt("User Baru:"); if(v) handleAddSetting('USER', v);}} className="px-3 py-1 border border-dashed rounded-full text-xs font-bold text-indigo-500 hover:bg-indigo-50">+ Tambah</button></div></div>
           </Card>
         )}
       </main>
-
       <div className="md:hidden fixed bottom-0 w-full bg-white border-t flex justify-around p-3 pb-safe z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-        {['dashboard', 'add', 'history', 'settings'].map(id => (
-           <button key={id} onClick={() => setView(id)} className={`flex flex-col items-center w-16 ${view === id ? 'text-indigo-600' : 'text-slate-400'}`}>
-             {id==='dashboard'?<LayoutDashboard/>:id==='add'?<PlusCircle/>:id==='history'?<Table/>:<Settings/>}
-             <span className="text-[10px] font-bold capitalize">{id}</span>
-           </button>
-        ))}
+        {['dashboard', 'add', 'history', 'settings'].map(id => (<button key={id} onClick={() => setView(id)} className={`flex flex-col items-center w-16 ${view === id ? 'text-indigo-600' : 'text-slate-400'}`}>{id==='dashboard'?<LayoutDashboard/>:id==='add'?<PlusCircle/>:id==='history'?<Table/>:<Settings/>}<span className="text-[10px] font-bold capitalize">{id}</span></button>))}
       </div>
     </div>
   );
