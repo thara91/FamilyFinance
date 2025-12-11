@@ -4,61 +4,108 @@ import {
   Activity, LayoutDashboard, Table, Settings, Save, Trash2, Globe, 
   Sparkles, Camera, Loader, Landmark, CreditCard, Coins, Briefcase, 
   ArrowRightLeft, FileText, BarChart3, Building2, Bitcoin, Users, Tags,
-  ChevronRight, Calendar, User, X, Edit3 
+  ChevronRight, Calendar, User, X, Edit3, Filter
 } from 'lucide-react';
 
 // --- CONFIG ---
-const API_URL = "https://script.google.https://script.google.com/macros/s/AKfycbzimklZxaTj5zjlUY97omiE6zrVIPkV1Ff5Reapem00023_bVPIFxhZBPp54PfcOP29VQ/exec"; 
+// GANTI DENGAN URL DEPLOYMENT GOOGLE APPS SCRIPT ANDA
+const API_URL = "https://script.google.com/macros/s/AKfycbyOm_at2rcnra8KqMOKiKGwQ_SI3r2SoQCfSl5W2S10UGQbI5U0gr3TEk6TUfctGKlpwg/exec"; 
 
 const callGemini = async (prompt, base64Data = null, mimeType = "image/jpeg") => {
-  const apiKey = "AIzaSyAA3yjQTvQ6zhs13ESwZkrSXFFCECSvL-8"; // <--- PASTE API KEY
-  if (!apiKey && window.location.hostname !== 'localhost') console.warn("API Key Gemini kosong!");
+  const apiKey = "AIzaSyAA3yjQTvQ6zhs13ESwZkrSXFFCECSvL-8"; // <--- PASTE API KEY GEMINI ANDA DI SINI
+  
+  if (!apiKey && window.location.hostname !== 'localhost') {
+      console.warn("API Key Gemini kosong! Fitur scan tidak akan berjalan.");
+  }
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
   const parts = [{ text: prompt }];
-  if (base64Data) parts.push({ inlineData: { mimeType: mimeType, data: base64Data } });
+  if (base64Data) {
+    parts.push({ inlineData: { mimeType: mimeType, data: base64Data } });
+  }
 
   try {
     const response = await fetch(url, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ contents: [{ parts }] })
     });
-    if (!response.ok) throw new Error("API Key Invalid");
+    
+    if (!response.ok) {
+       if (response.status === 400 || response.status === 403) throw new Error("API Key Invalid.");
+       throw new Error(`Gemini API Error: ${response.statusText}`);
+    }
+    
     const data = await response.json();
     return data.candidates?.[0]?.content?.parts?.[0]?.text || "Error.";
-  } catch (error) { return "Gagal memproses AI."; }
+  } catch (error) {
+    console.error(error);
+    return "Gagal memproses AI.";
+  }
 };
 
 const DataService = {
   fetchData: async () => {
-    try { const res = await fetch(API_URL); return await res.json(); } catch (e) { return null; }
+    try {
+      const res = await fetch(API_URL);
+      return await res.json();
+    } catch (e) { return null; }
   },
+
   addTransaction: async (tx) => {
-    await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'add', ...tx }) });
+    await fetch(API_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'add', ...tx })
+    });
   },
+
   updateTransaction: async (tx) => {
-    await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'edit', ...tx }) });
+    await fetch(API_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'edit', ...tx })
+    });
   },
+
   deleteTransaction: async (id) => {
-    // Force ID to string
-    await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'delete', id: String(id) }) });
+    await fetch(API_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', id: id })
+    });
   },
+
   manageSetting: async (action, type, value) => {
-    await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: action, settingType: type, value: value }) });
+    await fetch(API_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: action, settingType: type, value: value })
+    });
   }
 };
 
-const Card = ({ children, className = "" }) => <div className={`bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden ${className}`}>{children}</div>;
+const Card = ({ children, className = "" }) => (
+  <div className={`bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden ${className}`}>{children}</div>
+);
 
 const Badge = ({ type, children }) => {
-  const colors = { income: 'bg-emerald-100 text-emerald-700', expense: 'bg-rose-100 text-rose-700', transfer: 'bg-blue-100 text-blue-700', adjustment_plus: 'bg-amber-100 text-amber-700', adjustment_minus: 'bg-amber-100 text-amber-700', neutral: 'bg-slate-100 text-slate-700' };
-  return <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${colors[type] || colors.neutral} border-opacity-20`}>{children}</span>;
+  const colors = {
+    income: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+    expense: 'bg-rose-100 text-rose-700 border-rose-200',
+    transfer: 'bg-blue-100 text-blue-700 border-blue-200',
+    adjustment_plus: 'bg-amber-100 text-amber-700 border-amber-200',
+    adjustment_minus: 'bg-amber-100 text-amber-700 border-amber-200',
+    neutral: 'bg-slate-100 text-slate-700 border-slate-200'
+  };
+  return <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${colors[type] || colors.neutral}`}>{children}</span>;
 };
 
 const ASSET_TYPES = {
   'BANK': { label: 'Kas & Bank', icon: CreditCard, color: 'text-blue-600', bg: 'bg-blue-50' },
   'INVESTMENT': { label: 'Investasi', icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-  'COMMODITY': { label: 'Emas/Logam', icon: Coins, color: 'text-amber-600', bg: 'bg-amber-50' },
+  'COMMODITY': { label: 'Komoditas (Emas/Perak)', icon: Coins, color: 'text-amber-600', bg: 'bg-amber-50' },
   'CRYPTO': { label: 'Kripto', icon: Bitcoin, color: 'text-purple-600', bg: 'bg-purple-50' },
   'PROPERTY': { label: 'Properti', icon: Building2, color: 'text-indigo-600', bg: 'bg-indigo-50' },
   'OTHER': { label: 'Lainnya', icon: Briefcase, color: 'text-slate-600', bg: 'bg-slate-50' }
@@ -71,7 +118,18 @@ export default function App() {
   const [notification, setNotification] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiAdvice, setAiAdvice] = useState(null);
+  
+  // Edit State
   const [editingId, setEditingId] = useState(null);
+
+  // Filter State
+  const [filter, setFilter] = useState({ 
+    month: new Date().getMonth(), 
+    year: new Date().getFullYear(),
+    type: 'month' // 'month' or 'year'
+  });
+
+  // Scan States
   const [scannedTransactions, setScannedTransactions] = useState([]);
   const [isScanning, setIsScanning] = useState(false);
   const [isScanningStatement, setIsScanningStatement] = useState(false);
@@ -142,10 +200,25 @@ export default function App() {
   };
 
   const handleEditClick = (tx) => {
-    setFormData({ type: tx.type, amount: tx.amount, category: tx.category, date: tx.date, note: tx.note, user: tx.user, placement: tx.placement, toPlacement: tx.toPlacement || '' });
+    setFormData({
+        type: tx.type,
+        amount: tx.amount,
+        category: tx.category,
+        date: tx.date,
+        note: tx.note,
+        user: tx.user,
+        placement: tx.placement,
+        toPlacement: tx.toPlacement || ''
+    });
     setEditingId(tx.id);
     setView('add');
     showNotification("Masuk mode edit.");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setFormData(prev => ({ ...prev, amount: '', note: '' }));
+    showNotification("Edit dibatalkan.");
   };
 
   const handleDelete = async (id) => {
@@ -157,24 +230,57 @@ export default function App() {
 
   const formatCurrency = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
 
+  // --- STATISTIK & LOGIKA ASET (DENGAN FILTER) ---
   const stats = useMemo(() => {
+    // 1. Hitung Net Worth (Selalu All Time / Sepanjang Masa)
     const balances = {}; 
     data.placements.forEach(p => balances[p] = 0);
-    let net = 0;
+    
+    // Proses semua transaksi untuk saldo aset
     data.transactions.forEach(t => {
       const v = Number(t.amount);
       if (t.type === 'income' || t.type === 'adjustment_plus') balances[t.placement] += v;
       if (t.type === 'expense' || t.type === 'adjustment_minus') balances[t.placement] -= v;
-      if (t.type === 'transfer') { balances[t.placement] -= v; if(t.toPlacement) balances[t.toPlacement] += v; }
+      if (t.type === 'transfer') {
+        balances[t.placement] -= v;
+        if(t.toPlacement) balances[t.toPlacement] += v;
+      }
     });
-    net = Object.values(balances).reduce((a,b)=>a+b, 0);
+    
+    const net = Object.values(balances).reduce((a,b)=>a+b, 0);
     const assetAlloc = {};
     parsedPlacements.forEach(p => {
       const val = balances[p.original] || 0;
       if(val > 0) assetAlloc[p.type] = (assetAlloc[p.type] || 0) + val;
     });
-    return { balances, net, assetAlloc };
-  }, [data, parsedPlacements]);
+
+    // 2. Hitung Cashflow (Income vs Expense) BERDASARKAN FILTER
+    let periodIncome = 0;
+    let periodExpense = 0;
+    const categoryBreakdown = {};
+
+    const filteredTx = data.transactions.filter(t => {
+        const d = new Date(t.date);
+        const matchYear = d.getFullYear() === filter.year;
+        const matchMonth = filter.type === 'month' ? d.getMonth() === filter.month : true;
+        return matchYear && matchMonth;
+    });
+
+    filteredTx.forEach(t => {
+        const v = Number(t.amount);
+        if (t.type === 'income') periodIncome += v;
+        if (t.type === 'expense') {
+            periodExpense += v;
+            categoryBreakdown[t.category] = (categoryBreakdown[t.category] || 0) + v;
+        }
+    });
+
+    const sortedCats = Object.entries(categoryBreakdown)
+      .sort(([, a], [, b]) => b - a)
+      .map(([name, value]) => ({ name, value, percent: (value / (periodExpense || 1)) * 100 }));
+
+    return { balances, net, assetAlloc, periodIncome, periodExpense, sortedCats };
+  }, [data, parsedPlacements, filter]);
 
   const handleScan = async (file, type) => {
     const isStatement = type === 'statement';
@@ -184,25 +290,45 @@ export default function App() {
       try {
         const b64 = reader.result.split(',')[1];
         let prompt;
-        if (isStatement) prompt = `Analyze bank statement. Extract JSON array "transactions": date, note, amount, type (income/expense), category.`;
-        else prompt = `Analyze receipt. JSON: {amount, date, category, note, placement}`;
+        if (isStatement) {
+           prompt = `Analyze bank statement. Extract transactions to JSON array "transactions" with fields: date (YYYY-MM-DD), note, amount (number), type (income/expense), category (from list: ${data.categories.join(',')}).`;
+        } else {
+           prompt = `Analyze receipt. Return JSON object with fields: amount (number), date (YYYY-MM-DD), category, note, placement (guess from ${data.placements.join(',')}).`;
+        }
+
         const txt = await callGemini(prompt, b64);
         const json = JSON.parse(txt.replace(/```json|```/g, ''));
+
         if (isStatement && json.transactions) {
             setScannedTransactions(json.transactions.map((t, i) => ({...t, tempId: i, selected: true})));
             showNotification(`Ditemukan ${json.transactions.length} transaksi.`);
         } else {
-          setFormData(p => ({...p, ...json, type: 'expense'}));
+          setFormData(p => ({
+            ...p, 
+            ...json, 
+            type: 'expense',
+            placement: json.placement && data.placements.includes(json.placement) ? json.placement : parsedPlacements[0]?.original
+          }));
           showNotification("Scan Berhasil!");
         }
-      } catch(e) { showNotification("Gagal Scan"); }
+      } catch(e) { showNotification("Gagal Scan"); console.error(e); }
       if(isStatement) setIsScanningStatement(false); else setIsScanning(false);
     };
     reader.readAsDataURL(file);
   };
 
   const commitScannedTransactions = async () => {
-    const toAdd = scannedTransactions.filter(t => t.selected).map(t => ({ id: Date.now().toString() + Math.random().toString().substr(2, 5), type: t.type || 'expense', amount: Number(t.amount), category: t.category || 'Other', date: t.date, note: t.note, user: data.users[0], placement: parsedPlacements[0]?.original }));
+    const toAdd = scannedTransactions.filter(t => t.selected).map(t => ({
+      id: Date.now().toString() + Math.random().toString().substr(2, 5),
+      type: t.type || 'expense',
+      amount: Number(t.amount),
+      category: t.category || 'Other',
+      date: t.date,
+      note: t.note,
+      user: data.users[0], 
+      placement: parsedPlacements[0]?.original 
+    }));
+
     showNotification(`Menyimpan ${toAdd.length} data...`);
     setData(prev => ({ ...prev, transactions: [...toAdd, ...prev.transactions] }));
     for (const tx of toAdd) { await DataService.addTransaction(tx); }
@@ -210,14 +336,26 @@ export default function App() {
     showNotification("Selesai import!");
   };
 
+  const updateScannedTransaction = (index, field, value) => {
+    const updated = [...scannedTransactions];
+    updated[index][field] = value;
+    setScannedTransactions(updated);
+  };
+
   const handleAnalyzeFinances = async () => {
     setIsAnalyzing(true);
+    setAiAdvice(null);
     try {
       const recentTx = data.transactions.slice(0, 20); 
-      const prompt = `Act as financial advisor. Asset Portfolio (IDR): ${JSON.stringify(stats.assetAlloc)}. Recent Tx: ${JSON.stringify(recentTx)}. Net Worth: ${stats.net}. Provide Analysis & 3 Tips (Indonesian).`;
-      setAiAdvice(await callGemini(prompt));
-    } catch (err) { showNotification("Gagal menganalisa."); }
-    setIsAnalyzing(false);
+      const assetContext = JSON.stringify(stats.assetAlloc);
+      const prompt = `Act as a financial advisor. My Asset Portfolio (IDR): ${assetContext}. Recent transactions (IDR): ${JSON.stringify(recentTx)}. Net Worth: ${stats.net}. Provide: 1. Analysis of my Asset Allocation. 2. 3 actionable financial tips in Indonesian.`;
+      const response = await callGemini(prompt);
+      setAiAdvice(response);
+    } catch (err) {
+      showNotification("Gagal menganalisa.");
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const getCleanName = (raw) => raw ? raw.split(':')[0] : 'Unknown';
@@ -240,10 +378,54 @@ export default function App() {
 
         {view === 'dashboard' && (
           <div className="space-y-4">
+            {/* Filter Controls */}
+            <div className="flex gap-2 bg-white p-2 rounded-lg shadow-sm overflow-x-auto">
+                <select 
+                    value={filter.type} 
+                    onChange={e => setFilter({...filter, type: e.target.value})}
+                    className="p-2 text-sm border rounded bg-slate-50 font-bold"
+                >
+                    <option value="month">Bulanan</option>
+                    <option value="year">Tahunan</option>
+                </select>
+                
+                {filter.type === 'month' && (
+                    <select 
+                        value={filter.month} 
+                        onChange={e => setFilter({...filter, month: parseInt(e.target.value)})}
+                        className="p-2 text-sm border rounded bg-slate-50"
+                    >
+                        {['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'].map((m,i) => (
+                            <option key={i} value={i}>{m}</option>
+                        ))}
+                    </select>
+                )}
+
+                <select 
+                    value={filter.year} 
+                    onChange={e => setFilter({...filter, year: parseInt(e.target.value)})}
+                    className="p-2 text-sm border rounded bg-slate-50"
+                >
+                    {[2023, 2024, 2025, 2026].map(y => (
+                        <option key={y} value={y}>{y}</option>
+                    ))}
+                </select>
+            </div>
+
             <Card className="p-6 bg-gradient-to-br from-indigo-600 to-blue-500 text-white">
-              <p className="text-xs uppercase opacity-80">Total Aset</p>
-              <h2 className="text-4xl font-bold">{formatCurrency(stats.net)}</h2>
+              <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-xs uppercase opacity-80">Total Aset (Net Worth)</p>
+                    <h2 className="text-3xl md:text-4xl font-bold">{formatCurrency(stats.net)}</h2>
+                  </div>
+                  <div className="text-right">
+                      <p className="text-xs uppercase opacity-80">Cashflow ({filter.type === 'month' ? 'Bulanan' : 'Tahunan'})</p>
+                      <p className="text-sm font-semibold text-emerald-200">In: {formatCurrency(stats.periodIncome)}</p>
+                      <p className="text-sm font-semibold text-rose-200">Out: {formatCurrency(stats.periodExpense)}</p>
+                  </div>
+              </div>
             </Card>
+            
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {parsedPlacements.map(p => (
                 <div key={p.original} className="bg-white p-3 rounded-xl border flex justify-between items-center shadow-sm">
@@ -255,6 +437,23 @@ export default function App() {
                 </div>
               ))}
             </div>
+
+            {/* Expense Breakdown */}
+            <Card className="p-4">
+                <h3 className="font-bold text-slate-700 mb-3 text-sm uppercase">Pengeluaran {filter.type === 'month' ? 'Bulan Ini' : 'Tahun Ini'}</h3>
+                <div className="space-y-2">
+                    {stats.sortedCats.length > 0 ? stats.sortedCats.map((cat, idx) => (
+                        <div key={idx}>
+                            <div className="flex justify-between text-xs mb-1">
+                                <span>{cat.name}</span>
+                                <span>{formatCurrency(cat.value)} ({Math.round(cat.percent)}%)</span>
+                            </div>
+                            <div className="w-full bg-slate-100 rounded-full h-1.5"><div className="bg-rose-500 h-1.5 rounded-full" style={{width: `${cat.percent}%`}}></div></div>
+                        </div>
+                    )) : <p className="text-xs text-slate-400 italic">Belum ada pengeluaran di periode ini.</p>}
+                </div>
+            </Card>
+
             <Card className="p-6 bg-gradient-to-r from-white to-indigo-50/30 border border-indigo-100">
                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                   <h3 className="font-bold text-lg text-indigo-900 flex items-center gap-2"><Sparkles size={18}/> AI Advisor</h3>
@@ -269,15 +468,19 @@ export default function App() {
           <Card className="p-6">
             <div className="flex justify-between mb-4 items-center">
               <h2 className="font-bold text-lg">{editingId ? "Edit Transaksi" : "Input Transaksi"}</h2>
-              {editingId ? <button onClick={()=>setEditingId(null)} className="text-xs bg-red-100 text-red-600 px-3 py-1 rounded-full font-bold">Batal Edit</button> : (
+              {editingId ? (
+                  <button onClick={handleCancelEdit} className="text-xs bg-red-100 text-red-600 px-3 py-1 rounded-full font-bold">Batal Edit</button>
+              ) : (
                   <div className="flex gap-2">
                     <button onClick={()=>fileInputRef.current.click()} disabled={isScanning} className="bg-slate-100 p-2 rounded flex gap-2 text-xs font-bold items-center">{isScanning ? <Loader size={14} className="animate-spin"/> : <Camera size={14}/>} Resi</button>
                     <input type="file" ref={fileInputRef} hidden onChange={e=>handleScan(e.target.files[0], 'receipt')}/>
+                    
                     <button onClick={()=>statementInputRef.current.click()} disabled={isScanningStatement} className="bg-slate-100 p-2 rounded flex gap-2 text-xs font-bold items-center">{isScanningStatement ? <Loader size={14} className="animate-spin"/> : <FileText size={14}/>} PDF</button>
                     <input type="file" ref={statementInputRef} hidden accept="image/*,application/pdf" onChange={e=>handleScan(e.target.files[0], 'statement')}/>
                   </div>
               )}
             </div>
+
             {scannedTransactions.length > 0 ? (
                 <div className="border rounded-lg overflow-hidden">
                     <div className="bg-indigo-50 p-3 border-b border-indigo-100 flex justify-between items-center"><h3 className="font-bold text-indigo-900 text-sm">Hasil Scan ({scannedTransactions.length})</h3><button onClick={() => setScannedTransactions([])} className="text-xs text-red-500 font-bold">Batal</button></div>
