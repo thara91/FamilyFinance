@@ -40,8 +40,8 @@ const callGemini = async (prompt, base64Data = null, mimeType = "image/jpeg") =>
     const data = await response.json();
     return data.candidates?.[0]?.content?.parts?.[0]?.text || "Error.";
   } catch (error) {
-    console.error(error);
-    return "Gagal memproses AI.";
+    console.error("Gemini Fetch Error:", error);
+    throw error; // Lempar error agar bisa ditangkap di handleScan
   }
 };
 
@@ -310,22 +310,43 @@ export default function App() {
     return { balances, net, assetAlloc, periodIncome, periodExpense, sortedCats };
   }, [data, parsedPlacements, filter]);
 
+  // --- PERBAIKAN LOGIKA SCAN (MIME TYPE & JSON PARSING) ---
   const handleScan = async (file, type) => {
+    if (!file) return; // Mencegah error jika cancel file picker
     const isStatement = type === 'statement';
     if(isStatement) setIsScanningStatement(true); else setIsScanning(true);
+    
     const reader = new FileReader();
     reader.onloadend = async () => {
       try {
         const b64 = reader.result.split(',')[1];
+        const mimeType = file.type || "image/jpeg"; // Otomatis deteksi tipe file (PDF/PNG/JPG)
+
         let prompt;
         if (isStatement) {
-           prompt = `Analyze bank statement. Extract transactions to JSON array "transactions" with fields: date (YYYY-MM-DD), note, amount (number), type (income/expense), category (from list: ${data.categories.join(',')}).`;
+           prompt = `Analyze bank statement. Extract transactions to JSON array "transactions" with fields: date (YYYY-MM-DD), note, amount (number), type (income/expense), category (from list: ${data.categories.join(',')}). Return ONLY raw JSON.`;
         } else {
-           prompt = `Analyze receipt. Return JSON object with fields: amount (number), date (YYYY-MM-DD), category, note, placement (guess from ${data.placements.join(',')}).`;
+           prompt = `Analyze receipt. Return JSON object with fields: amount (number), date (YYYY-MM-DD), category, note, placement (guess from ${data.placements.join(',')}). Return ONLY raw JSON.`;
         }
 
-        const txt = await callGemini(prompt, b64);
-        const json = JSON.parse(txt.replace(/```json|```/g, ''));
+        // Panggil Gemini dengan MimeType yang benar
+        const txt = await callGemini(prompt, b64, mimeType);
+        
+        // Bersihkan hasil JSON dari format Markdown (```json ... ```)
+        let cleanJson = txt.replace(/```json/g, '').replace(/```/g, '').trim();
+        
+        // Cari kurung kurawal/siku pertama dan terakhir untuk memastikan hanya JSON yang diambil
+        const firstChar = isStatement ? '[' : '{';
+        const lastChar = isStatement ? ']' : '}';
+        // Jika statement biasanya dalam object { transactions: [...] }
+        const jsonStart = cleanJson.indexOf('{'); 
+        const jsonEnd = cleanJson.lastIndexOf('}');
+        
+        if (jsonStart !== -1 && jsonEnd !== -1) {
+            cleanJson = cleanJson.substring(jsonStart, jsonEnd + 1);
+        }
+
+        const json = JSON.parse(cleanJson);
 
         if (isStatement && json.transactions) {
             setScannedTransactions(json.transactions.map((t, i) => ({...t, tempId: i, selected: true})));
@@ -339,7 +360,10 @@ export default function App() {
           }));
           showNotification("Scan Berhasil!");
         }
-      } catch(e) { showNotification("Gagal Scan"); console.error(e); }
+      } catch(e) { 
+          console.error("Scan Error Full:", e);
+          showNotification("Gagal Scan. Cek konsol/file."); 
+      }
       if(isStatement) setIsScanningStatement(false); else setIsScanning(false);
     };
     reader.readAsDataURL(file);
