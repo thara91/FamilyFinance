@@ -22,3 +22,13 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Next.js
+.next
+out
+next-env.d.ts
+*.tsbuildinfo
+
+# Env files hold project keys; only .env.example is committed
+.env
+.env*.local
