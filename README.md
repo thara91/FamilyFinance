@@ -9,13 +9,22 @@ Next.js 16 · Supabase (Auth + Postgres + RLS) · Tailwind CSS 4 · Plus Jakarta
 
 ## Menyiapkan Supabase (sekali)
 
-1. Buka proyek Supabase Anda, masuk ke **SQL Editor**, tempel seluruh isi `supabase/migrations/20261003000000_kondisi_awal.sql`, lalu **Run**.
+1. Buka proyek Supabase Anda, masuk ke **SQL Editor**, lalu jalankan file di `supabase/migrations/` satu per satu sesuai urutan nama:
+   `20261003000000_kondisi_awal.sql`, kemudian `20261003010000_dana_darurat.sql`.
 2. **Authentication > URL Configuration**:
    - Site URL: alamat Vercel Anda, misalnya `https://kas-keluarga.vercel.app`
    - Redirect URLs: tambahkan `https://kas-keluarga.vercel.app/auth/callback` dan `http://localhost:3000/auth/callback`
 3. **Project Settings > API**: salin *Project URL* dan *Publishable key* (proyek lama menyebutnya *anon key*).
 
 Email bawaan Supabase dibatasi beberapa email per jam. Untuk dipakai sekeluarga sehari-hari, pasang SMTP sendiri di **Authentication > Emails > SMTP Settings**.
+
+Sebelum mengundang orang di luar keluarga, isi nama pengelola, email kontak, dan region Supabase di `lib/site.ts`. Nilainya tampil di halaman Kebijakan Privasi dan Syarat Layanan.
+
+## Aturan hitung
+
+- Rasio cicilan: total cicilan maksimal 30% pemasukan.
+- Target dana darurat: pengeluaran rutin per bulan × 12 (tidak berpenghasilan tetap), 3 (lajang), 6 (menikah tanpa anak), 9 atau 12 (menikah dengan anak).
+- Alokasi dana darurat: 10% pemasukan per bulan (bisa diubah per keluarga), ditampung di tabungan bank, e-wallet, atau reksa dana pasar uang yang ditandai.
 
 ## Menjalankan di komputer
 

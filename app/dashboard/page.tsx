@@ -29,7 +29,7 @@ function Shell({ subtitle, actions, children }: { subtitle?: string; actions?: R
   );
 }
 
-function List({ title, empty, rows }: { title: string; empty: string; rows: { label: string; meta?: string; value: number }[] }) {
+function List({ title, empty, rows }: { title: string; empty: string; rows: { label: string; meta?: string; value: number; tag?: string }[] }) {
   const total = rows.reduce((t, r) => t + r.value, 0);
   return (
     <section aria-label={title} className="card flex flex-col gap-2">
@@ -44,7 +44,10 @@ function List({ title, empty, rows }: { title: string; empty: string; rows: { la
           {rows.map((r, i) => (
             <li key={`${r.label}-${i}`} className="flex items-baseline justify-between gap-3 border-t border-line py-2.5 first:border-t-0">
               <span className="flex min-w-0 flex-col">
-                <span className="break-words">{r.label}</span>
+                <span className="flex flex-wrap items-center gap-2">
+                  <span className="break-words">{r.label}</span>
+                  {r.tag ? <span className="rounded-full bg-up/15 px-2.5 py-0.5 text-xs font-semibold text-[#5ee3b0]">{r.tag}</span> : null}
+                </span>
                 {r.meta ? <span className="text-[13px] text-muted">{r.meta}</span> : null}
               </span>
               <span className="num shrink-0 whitespace-nowrap font-semibold">{formatRupiah(r.value)}</span>
@@ -99,10 +102,10 @@ export default async function DashboardPage() {
 
   const hid = membership.household_id;
   const [household, accounts, incomes, expenses, debts, assets] = await Promise.all([
-    supabase.from('households').select('name, dependents, emergency_target_months, updated_at').eq('id', hid).single(),
-    supabase.from('accounts').select('name, kind, balance').eq('household_id', hid).order('balance', { ascending: false }),
+    supabase.from('households').select('name, earning_status, emergency_target_months, emergency_allocation_pct, updated_at').eq('id', hid).single(),
+    supabase.from('accounts').select('name, kind, balance, is_emergency').eq('household_id', hid).order('balance', { ascending: false }),
     supabase.from('income_sources').select('name, earner, monthly_amount').eq('household_id', hid).order('monthly_amount', { ascending: false }),
-    supabase.from('monthly_expenses').select('category, monthly_amount').eq('household_id', hid).order('monthly_amount', { ascending: false }),
+    supabase.from('monthly_expenses').select('category, monthly_amount, is_routine').eq('household_id', hid).order('monthly_amount', { ascending: false }),
     supabase.from('debts').select('name, kind, principal_remaining, monthly_installment').eq('household_id', hid).order('principal_remaining', { ascending: false }),
     supabase.from('assets').select('name, kind, current_value').eq('household_id', hid).order('current_value', { ascending: false }),
   ]);
@@ -117,7 +120,7 @@ export default async function DashboardPage() {
     expenses: expenses.data ?? [],
     debts: debts.data ?? [],
     assets: assets.data ?? [],
-  } as BaselineRecord;
+  } as unknown as BaselineRecord;
 
   const summary = summarize(fromRecord(record));
   const updated = new Intl.DateTimeFormat('id-ID', { dateStyle: 'long', timeZone: 'Asia/Jakarta' }).format(new Date(record.household.updated_at));
@@ -134,11 +137,11 @@ export default async function DashboardPage() {
 
       <div className="grid gap-5 md:grid-cols-2">
         <List title="Rekening & kas" empty="Belum ada rekening."
-          rows={record.accounts.map((r) => ({ label: r.name, meta: ACCOUNT_KINDS[r.kind], value: Number(r.balance) }))} />
+          rows={record.accounts.map((r) => ({ label: r.name, meta: ACCOUNT_KINDS[r.kind], value: Number(r.balance), tag: r.is_emergency ? 'Dana darurat' : undefined }))} />
         <List title="Pemasukan per bulan" empty="Belum ada pemasukan."
           rows={record.incomes.map((r) => ({ label: r.name, meta: r.earner ?? undefined, value: Number(r.monthly_amount) }))} />
-        <List title="Pengeluaran rutin per bulan" empty="Belum ada pengeluaran rutin."
-          rows={record.expenses.map((r) => ({ label: r.category, value: Number(r.monthly_amount) }))} />
+        <List title="Pengeluaran per bulan" empty="Belum ada pengeluaran."
+          rows={record.expenses.map((r) => ({ label: r.category, meta: r.is_routine ? 'Rutin' : 'Tidak rutin', value: Number(r.monthly_amount) }))} />
         <List title="Utang" empty="Tidak ada utang yang dicatat."
           rows={record.debts.map((r) => ({ label: r.name, meta: `${DEBT_KINDS[r.kind]} · cicilan ${formatRupiah(Number(r.monthly_installment))}/bln`, value: Number(r.principal_remaining) }))} />
         <List title="Aset & investasi" empty="Tidak ada aset yang dicatat."

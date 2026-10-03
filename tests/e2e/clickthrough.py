@@ -34,7 +34,7 @@ def no_overflow(page, label: str):
     small = page.evaluate(
         """() => [...document.querySelectorAll('button, a, input, select')]
         .filter(e => e.offsetParent !== null && getComputedStyle(e).visibility !== 'hidden')
-        .map(e => { const r = e.getBoundingClientRect(); return {t: (e.innerText || e.getAttribute('aria-label') || e.id || e.name || '').trim().slice(0, 40), h: r.height, w: r.width}; })
+        .map(e => { const hit = ['checkbox', 'radio'].includes(e.type) ? (e.closest('label') || e) : e; const r = hit.getBoundingClientRect(); return {t: (e.innerText || e.getAttribute('aria-label') || e.id || e.name || '').trim().slice(0, 40), h: r.height, w: r.width}; })
         .filter(r => r.h < 44 || r.w < 44)"""
     )
     assert not small, f"{label}: targets under 44px {small}"
@@ -66,7 +66,7 @@ def run(width: int, height: int, tag: str, email: str):
         money(page, "qc-inst", "7000000")
         expect(page.locator("#qc-income")).to_have_value("20.000.000")
         expect(page.get_by_text(re.compile(r"Rp\s?5\.000\.000")).first).to_be_visible()
-        expect(page.get_by_text(re.compile(r"Cicilan 35%.*patokan umum 30%"))).to_be_visible()
+        expect(page.get_by_text(re.compile(r"Cicilan 35%.*melewati batas 30%"))).to_be_visible()
         ok(f"[{tag}] quick check formats input and computes sisa Rp 5.000.000, ratio 35% flagged")
         carry.click()
         page.wait_for_url("**/mulai")
@@ -82,8 +82,6 @@ def run(width: int, height: int, tag: str, email: str):
         expect(page.locator("#hh-name-error")).to_have_count(0)
         ok(f"[{tag}] error clears as soon as the field is filled")
         page.fill("#hh-owner", "Ayah")
-        page.select_option("#hh-dep", "2")
-        page.select_option("#hh-target", "9")
         page.screenshot(path=f"{OUT}/{tag}-02-keluarga.png", full_page=True)
         no_overflow(page, f"[{tag}] wizard keluarga")
         page.get_by_role("button", name=re.compile("Lanjut ke rekening")).click()
@@ -118,13 +116,45 @@ def run(width: int, height: int, tag: str, email: str):
 
         expect(page.get_by_text("Total pengeluaran (rincikan nanti)")).to_have_count(0)
         expect(page.locator("input[value='Total pengeluaran (rincikan nanti)']")).to_have_count(1)
+        hib = page.locator("li").filter(has=page.locator("input[value='Hiburan & makan di luar']"))
+        expect(hib.get_by_role("checkbox")).not_to_be_checked()
+        expect(page.locator("li").filter(has=page.locator("input[value='Rumah tangga & makan']")).get_by_role("checkbox")).to_be_checked()
+        hib.locator("input[id$='-amt']").fill("1000000")
+        expect(page.get_by_text(re.compile(r"Rutin Rp\s?8\.000\.000"))).to_be_visible()
+        ok(f"[{tag}] needs are pre-checked as routine, entertainment is not; routine total excludes it")
+        page.get_by_role("button", name=re.compile("Lanjut ke dana darurat")).click()
+
+        expect(page.get_by_role("heading", name="Dana darurat", level=1)).to_be_visible()
+        page.get_by_role("button", name=re.compile("Lanjut ke utang")).click()
+        expect(page.get_by_text("Pilih status yang paling sesuai.")).to_be_visible()
+        expect(page.locator("#ef-status-freelance")).to_be_focused()
+        ok(f"[{tag}] status is required, focus moves to the first option")
+        page.get_by_text("Lajang", exact=True).click()
+        expect(page.get_by_text(re.compile(r"target 3× = Rp\s?24\.000\.000"))).to_be_visible()
+        page.get_by_text("Menikah dengan anak", exact=True).click()
+        expect(page.locator("#ef-months-9")).to_be_checked()
+        page.locator("label[for='ef-months-12']").click()
+        expect(page.get_by_text(re.compile(r"target 12× = Rp\s?96\.000\.000"))).to_be_visible()
+        ok(f"[{tag}] status sets the multiplier: lajang 3x, menikah dengan anak 9 or 12")
+        expect(page.locator("label[for^='ef-tag-']")).to_have_count(1)
+        page.locator("label[for^='ef-tag-']").first.click()
+        expect(page.get_by_text(re.compile(r"sisihkan Rp\s?2\.000\.000 dari pemasukan, tercapai dalam 33 bulan"))).to_be_visible()
+        ok(f"[{tag}] only eligible instruments can be tagged; 10% allocation Rp 2.000.000, target in 33 months")
+        page.fill("#ef-pct", "")
+        page.get_by_role("button", name=re.compile("Lanjut ke utang")).click()
+        expect(page.locator("#ef-pct-error")).to_be_visible()
+        page.fill("#ef-pct", "10")
+        ok(f"[{tag}] empty allocation percentage is rejected")
+        page.screenshot(path=f"{OUT}/{tag}-03b-darurat.png", full_page=True)
+        no_overflow(page, f"[{tag}] wizard dana darurat")
         page.get_by_role("button", name=re.compile("Lanjut ke utang")).click()
 
         debt_name = page.locator("input[id^='debt-'][id$='-name']").first
         expect(debt_name).to_have_value("Cicilan")
         page.get_by_role("button", name=re.compile("Lanjut ke aset")).click()
         expect(page.locator("[id^='debt-'][id$='-principal-error']")).to_be_visible()
-        ok(f"[{tag}] carried installment without principal is caught at Utang step")
+        expect(page.locator("input[id^='debt-'][id$='-principal']").first).to_be_focused()
+        ok(f"[{tag}] carried installment without principal is caught at Utang step, focus moves to it")
         debt_name.fill("KPR rumah")
         page.locator("select[id^='debt-']").first.select_option("kpr")
         page.locator("input[id^='debt-'][id$='-principal']").first.fill("400000000")
@@ -139,8 +169,9 @@ def run(width: int, height: int, tag: str, email: str):
 
         expect(page.get_by_role("heading", name="Kekayaan bersih")).to_be_visible()
         expect(page.get_by_text(re.compile(r"Rp\s?430\.500\.000")).first).to_be_visible()
-        expect(page.get_by_text(re.compile(r"2 bulan pengeluaran, target Anda 9 bulan"))).to_be_visible()
-        ok(f"[{tag}] summary: net worth Rp 430.500.000, emergency 2 of 9 months")
+        expect(page.get_by_text(re.compile(r"melewati batas 30%\. Cicilan maksimal Rp\s?6\.000\.000"))).to_be_visible()
+        expect(page.get_by_text(re.compile(r"Dana darurat kurang Rp\s?66\.000\.000"))).to_be_visible()
+        ok(f"[{tag}] summary: net worth Rp 430.500.000, cicilan over 30% flagged with max, emergency shortfall Rp 66.000.000")
         page.screenshot(path=f"{OUT}/{tag}-04-ringkasan.png", full_page=True)
         no_overflow(page, f"[{tag}] wizard ringkasan")
 
@@ -202,6 +233,8 @@ def run(width: int, height: int, tag: str, email: str):
         expect(page.get_by_text(re.compile(r"Rp\s?430\.500\.000")).first).to_be_visible()
         expect(page.get_by_role("region", name="Rekening & kas")).to_contain_text("Dompet")
         expect(page.get_by_role("region", name="Utang")).to_contain_text("KPR rumah")
+        expect(page.get_by_role("region", name="Rekening & kas").get_by_text("Dana darurat")).to_be_visible()
+        expect(page.get_by_text(re.compile(r"Menikah dengan anak · 12× pengeluaran rutin"))).to_be_visible()
         ok(f"[{tag}] dashboard reads saved rows back through RLS (net worth, accounts, debts)")
         page.screenshot(path=f"{OUT}/{tag}-06-dashboard.png", full_page=True)
         no_overflow(page, f"[{tag}] dashboard")
@@ -212,7 +245,7 @@ def run(width: int, height: int, tag: str, email: str):
         if width >= 1024:
             page.get_by_role("navigation", name="Langkah isian").get_by_role("button", name="Rekening & kas").click()
         else:
-            for _ in range(5):
+            for _ in range(6):
                 page.get_by_role("button", name="Kembali").click()
         expect(page.locator("input[id^='acc-'][id$='-name']").nth(1)).to_have_value("Dompet")
         page.locator("input[id^='acc-'][id$='-bal']").nth(1).fill("1500000")
@@ -220,7 +253,7 @@ def run(width: int, height: int, tag: str, email: str):
         if width >= 1024:
             page.get_by_role("navigation", name="Langkah isian").get_by_role("button", name="Ringkasan").click()
         else:
-            for name in ["pemasukan", "pengeluaran", "utang", "aset", "ringkasan"]:
+            for name in ["pemasukan", "pengeluaran", "dana darurat", "utang", "aset", "ringkasan"]:
                 page.get_by_role("button", name=re.compile(f"Lanjut ke {name}")).click()
         page.get_by_role("button", name="Simpan kondisi awal").click()
         page.wait_for_url("**/dashboard", timeout=15000)
@@ -254,6 +287,21 @@ def run(width: int, height: int, tag: str, email: str):
         page.get_by_role("link", name="Kas Keluarga").first.click()
         page.wait_for_url(BASE + "/")
         ok(f"[{tag}] header 'Masuk', hero 'Sudah punya akun? Masuk', and logo links navigate")
+
+        page.get_by_role("link", name="Kebijakan Privasi").click()
+        page.wait_for_url("**/privasi")
+        expect(page.get_by_role("heading", name="Kebijakan Privasi", level=1)).to_be_visible()
+        no_overflow(page, f"[{tag}] privasi")
+        page.screenshot(path=f"{OUT}/{tag}-07-privasi.png", full_page=True)
+        page.get_by_role("link", name="Syarat Layanan").first.click()
+        page.wait_for_url("**/ketentuan")
+        expect(page.get_by_role("heading", name="Syarat Layanan", level=1)).to_be_visible()
+        no_overflow(page, f"[{tag}] ketentuan")
+        page.goto(BASE + "/masuk")
+        page.get_by_role("link", name="Syarat Layanan").click()
+        page.wait_for_url("**/ketentuan")
+        page.goto(BASE + "/")
+        ok(f"[{tag}] footer and login links open Kebijakan Privasi and Syarat Layanan, both link to each other")
 
         page.keyboard.press("Tab")
         focused = page.evaluate("getComputedStyle(document.activeElement).outlineStyle + ' ' + getComputedStyle(document.activeElement).outlineWidth")

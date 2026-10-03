@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { DEBT_RATIO_GUIDE, emptyDraft, hasContent, newId } from '@/lib/baseline';
+import { DEBT_RATIO_LIMIT, emptyDraft, hasContent, newId } from '@/lib/baseline';
 import { loadDraft, saveDraft } from '@/lib/draft';
 import { formatPercent, formatRupiah } from '@/lib/money';
 import { Field, MoneyInput } from '@/components/Field';
@@ -38,7 +38,7 @@ export function QuickCheck() {
       d.incomes = [{ id: newId(), name: 'Pemasukan bulanan', earner: '', amount: income }];
     }
     if (spend > 0 && d.expenses.every((r) => r.amount === 0)) {
-      d.expenses = [...d.expenses, { id: newId(), category: 'Total pengeluaran (rincikan nanti)', amount: spend }];
+      d.expenses = [...d.expenses, { id: newId(), category: 'Total pengeluaran (rincikan nanti)', amount: spend, isRoutine: true }];
     }
     if (installment > 0 && d.debts.length === 0) {
       d.debts = [{ id: newId(), name: 'Cicilan', kind: 'pinjaman', principal: 0, installment }];
@@ -72,7 +72,7 @@ export function QuickCheck() {
             {ratio !== null && installment > 0 ? (
               <span className="num text-[13px] text-muted">
                 Cicilan {formatPercent(ratio)} dari pemasukan
-                {ratio > DEBT_RATIO_GUIDE ? `, di atas patokan umum ${formatPercent(DEBT_RATIO_GUIDE)}` : ''}.
+                {ratio > DEBT_RATIO_LIMIT ? `, melewati batas ${formatPercent(DEBT_RATIO_LIMIT)}` : ''}.
               </span>
             ) : null}
           </div>

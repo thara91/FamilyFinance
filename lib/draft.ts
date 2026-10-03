@@ -1,4 +1,4 @@
-import { emptyDraft, type Draft } from './baseline.ts';
+import { normalizeDraft, type Draft } from './baseline.ts';
 
 const KEY = 'kas-keluarga.draft.v1';
 
@@ -8,7 +8,7 @@ export function loadDraft(): Draft | null {
     const raw = window.localStorage.getItem(KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Draft;
-    return parsed?.version === 1 ? { ...emptyDraft(), ...parsed } : null;
+    return parsed?.version === 1 ? normalizeDraft(parsed) : null;
   } catch {
     return null;
   }

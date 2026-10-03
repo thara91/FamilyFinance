@@ -42,11 +42,11 @@ async function as(user, sql, params = []) {
   }
 }
 
-const payload = (name, accounts) => JSON.stringify({
-  household: { name, ownerName: 'Ayah', dependents: 2, emergencyTargetMonths: 6 },
+const payload = (name, accounts, extra = {}) => JSON.stringify({
+  household: { name, ownerName: 'Ayah', earningStatus: 'lajang', emergencyTargetMonths: 3, allocationPct: 10, ...extra.household },
   accounts,
   incomes: [{ name: 'Gaji', earner: 'Ayah', amount: 18500000 }],
-  expenses: [{ category: 'Rumah tangga & makan', amount: 6000000 }],
+  expenses: [{ category: 'Rumah tangga & makan', amount: 4000000, isRoutine: true }, { category: 'Hiburan', amount: 1000000, isRoutine: false }],
   debts: [{ name: 'KPR rumah', kind: 'kpr', principal: 420000000, installment: 7500000 }],
   assets: [{ name: 'Rumah', kind: 'properti', value: 900000000 }],
 });
@@ -126,6 +126,37 @@ await check('negative balance is rejected', async () => {
 
 await check('empty household name is rejected', async () => {
   await assert.rejects(as(A, 'select public.save_baseline($1::jsonb)', [payload('   ', [])]));
+});
+
+await check('emergency tag and routine flag are stored', async () => {
+  await as(A, 'select public.save_baseline($1::jsonb)', [
+    payload('Keluarga A baru', [{ name: 'Tabungan darurat', kind: 'tabungan', balance: 5000000, isEmergency: true }, { name: 'RDPU', kind: 'rdpu', balance: 2000000, isEmergency: true }]),
+  ]);
+  const acc = await as(A, 'select kind, is_emergency from public.accounts order by kind');
+  assert.deepEqual(acc.rows, [{ kind: 'rdpu', is_emergency: true }, { kind: 'tabungan', is_emergency: true }]);
+  const exp = await as(A, 'select category, is_routine from public.monthly_expenses order by category');
+  assert.deepEqual(exp.rows, [{ category: 'Hiburan', is_routine: false }, { category: 'Rumah tangga & makan', is_routine: true }]);
+  const h = await as(A, 'select earning_status, emergency_target_months, emergency_allocation_pct from public.households');
+  assert.deepEqual(h.rows, [{ earning_status: 'lajang', emergency_target_months: 3, emergency_allocation_pct: 10 }]);
+});
+
+await check('cash cannot be tagged as emergency instrument', async () => {
+  await assert.rejects(as(A, 'select public.save_baseline($1::jsonb)', [
+    payload('Keluarga A baru', [{ name: 'Dompet', kind: 'tunai', balance: 1, isEmergency: true }]),
+  ]));
+});
+
+await check('months must match the earning status', async () => {
+  await assert.rejects(as(A, 'select public.save_baseline($1::jsonb)', [
+    payload('Keluarga A baru', [], { household: { earningStatus: 'lajang', emergencyTargetMonths: 6 } }),
+  ]));
+  await assert.rejects(as(A, 'select public.save_baseline($1::jsonb)', [
+    payload('Keluarga A baru', [], { household: { earningStatus: 'menikah_anak', emergencyTargetMonths: 10 } }),
+  ]));
+  const r = await as(A, 'select public.save_baseline($1::jsonb) as id', [
+    payload('Keluarga A baru', [], { household: { earningStatus: 'menikah_anak', emergencyTargetMonths: 12 } }),
+  ]);
+  assert.equal(r.rows[0].id, hidA);
 });
 
 console.log(results.join('\n'));

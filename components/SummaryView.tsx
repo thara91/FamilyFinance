@@ -1,4 +1,4 @@
-import { signals, type Summary, type Tone } from '@/lib/baseline';
+import { ACCOUNT_KINDS, DEBT_RATIO_LIMIT, EARNING_STATUSES, signals, type Summary, type Tone } from '@/lib/baseline';
 import { formatPercent, formatRupiah } from '@/lib/money';
 import { IconAlert, IconCheck, IconDown } from './icons';
 
@@ -19,7 +19,7 @@ function IncomeSplit({ s }: { s: Summary }) {
   if (s.income <= 0) return null;
   const share = (n: number) => Math.max(0, Math.min(1, n / s.income));
   const parts = [
-    { label: 'Pengeluaran rutin', ratio: share(s.expenses), color: 'bg-down' },
+    { label: 'Pengeluaran', ratio: share(s.expenses), color: 'bg-down' },
     { label: 'Cicilan', ratio: share(s.installments), color: 'bg-warn' },
     { label: 'Sisa', ratio: share(Math.max(0, s.freeCashflow)), color: 'bg-up' },
   ];
@@ -44,8 +44,8 @@ function IncomeSplit({ s }: { s: Summary }) {
 }
 
 export function SummaryView({ s }: { s: Summary }) {
-  const months = s.emergencyMonths;
-  const progress = months === null ? 0 : Math.min(1, months / s.emergencyTargetMonths);
+  const e = s.emergency;
+  const progress = e.target > 0 ? Math.min(1, e.saved / e.target) : 0;
   const readings = signals(s);
 
   return (
@@ -80,7 +80,7 @@ export function SummaryView({ s }: { s: Summary }) {
         <h2 id="cf-h" className="text-base font-semibold">Arus kas per bulan</h2>
         <div>
           <Row label="Pemasukan" value={s.income} tone="up" />
-          <Row label="Pengeluaran rutin" value={-s.expenses} />
+          <Row label="Pengeluaran" value={-s.expenses} />
           <Row label="Cicilan utang" value={-s.installments} />
           <Row label="Sisa per bulan" value={s.freeCashflow} tone={s.freeCashflow < 0 ? 'down' : 'up'} />
         </div>
@@ -90,18 +90,20 @@ export function SummaryView({ s }: { s: Summary }) {
       <section aria-labelledby="ef-h" className="card flex flex-col gap-3">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 id="ef-h" className="text-base font-semibold">Dana darurat</h2>
-          <span className="num text-[13px] text-muted">Target {s.emergencyTargetMonths} bulan</span>
+          {e.status ? <span className="num text-[13px] text-muted">{EARNING_STATUSES[e.status].label} · {e.months}× pengeluaran rutin</span> : null}
         </div>
-        {months === null ? (
-          <p className="text-muted">Isi pengeluaran rutin atau cicilan untuk menghitung berapa lama kas bertahan.</p>
+        {!e.status ? (
+          <p className="text-muted">Pilih status di langkah Dana darurat untuk menghitung target.</p>
+        ) : e.target === 0 ? (
+          <p className="text-muted">Tandai pengeluaran rutin di langkah Pengeluaran untuk menghitung target.</p>
         ) : (
           <>
             <p className="num text-2xl font-bold">
-              {new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1 }).format(months)} bulan
+              {formatRupiah(e.saved)} <span className="text-base font-medium text-muted">dari {formatRupiah(e.target)}</span>
             </p>
             <div
               role="progressbar"
-              aria-label="Dana darurat terhadap target"
+              aria-label="Dana darurat terkumpul terhadap target"
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={Math.round(progress * 100)}
@@ -109,14 +111,28 @@ export function SummaryView({ s }: { s: Summary }) {
             >
               <div className="h-full rounded-full bg-accent" style={{ width: `${progress * 100}%` }} />
             </div>
-            <p className="num text-[13px] text-muted">
-              {formatRupiah(s.cash)} dari {formatRupiah(s.emergencyTargetAmount)}
-            </p>
+            <dl className="num grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1.5 text-[13px]">
+              <dt className="text-muted">Pengeluaran rutin</dt>
+              <dd className="text-right">{formatRupiah(e.routineSpending)}/bln</dd>
+              <dt className="text-muted">Alokasi {formatPercent(e.allocationPct / 100)} pemasukan</dt>
+              <dd className="text-right">{formatRupiah(e.monthlyAllocation)}/bln</dd>
+              <dt className="text-muted">Perkiraan tercapai</dt>
+              <dd className="text-right">{e.shortfall === 0 ? 'Sudah tercapai' : e.monthsToTarget === null ? 'Isi pemasukan' : `${e.monthsToTarget} bulan lagi`}</dd>
+            </dl>
+            {e.instruments.length > 0 ? (
+              <div className="flex flex-wrap gap-2" aria-label="Instrumen penampung dana darurat">
+                {e.instruments.map((x, i) => (
+                  <span key={`${x.name}-${i}`} className="rounded-full bg-up/15 px-2.5 py-1 text-xs font-semibold text-[#5ee3b0]">
+                    {x.name} · {ACCOUNT_KINDS[x.kind]}
+                  </span>
+                ))}
+              </div>
+            ) : null}
           </>
         )}
         {s.debtRatio !== null ? (
           <p className="num border-t border-line pt-3 text-[13px] text-muted">
-            Rasio cicilan terhadap pemasukan: <span className="font-semibold text-ink">{formatPercent(s.debtRatio)}</span>
+            Rasio cicilan: <span className={`font-semibold ${s.debtRatio > DEBT_RATIO_LIMIT ? 'text-down' : 'text-ink'}`}>{formatPercent(s.debtRatio)}</span> dari pemasukan (batas {formatPercent(DEBT_RATIO_LIMIT)})
           </p>
         ) : null}
       </section>

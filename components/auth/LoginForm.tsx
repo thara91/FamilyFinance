@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { supabaseConfigured } from '@/lib/supabase/env';
 import { Field } from '@/components/Field';
@@ -99,6 +100,13 @@ export function LoginForm({ next }: { next: string }) {
       <button type="submit" className="btn btn-primary min-h-12 text-[15px]" disabled={status.kind === 'sending'}>
         {status.kind === 'sending' ? 'Mengirim tautan…' : 'Kirim tautan masuk'}
       </button>
+      <div className="flex flex-col gap-0.5 text-[13px] text-muted">
+        <span>Dengan masuk, Anda menyetujui:</span>
+        <span className="flex flex-wrap gap-x-5">
+          <Link href="/ketentuan" className="link inline-flex min-h-11 items-center">Syarat Layanan</Link>
+          <Link href="/privasi" className="link inline-flex min-h-11 items-center">Kebijakan Privasi</Link>
+        </span>
+      </div>
     </form>
   );
 }

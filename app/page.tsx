@@ -7,8 +7,9 @@ import { STEPS } from '@/lib/baseline';
 const METRICS = [
   { name: 'Kekayaan bersih', how: 'Kas, rekening, dan aset dikurangi sisa pokok semua utang.' },
   { name: 'Sisa kas per bulan', how: 'Pemasukan dikurangi pengeluaran rutin dan cicilan.' },
-  { name: 'Ketahanan dana darurat', how: 'Berapa bulan kas yang ada bisa menutup pengeluaran dan cicilan, dibandingkan target Anda.' },
-  { name: 'Rasio cicilan', how: 'Bagian pemasukan yang terpakai untuk cicilan utang setiap bulan.' },
+  { name: 'Target dana darurat', how: 'Pengeluaran rutin per bulan dikali 12 (freelance), 3 (lajang), 6 (menikah tanpa anak), atau 9 sampai 12 (menikah dengan anak).' },
+  { name: 'Alokasi dana darurat', how: 'Sisihkan 10% pemasukan per bulan ke tabungan bank, e-wallet, atau reksa dana pasar uang sampai target tercapai.' },
+  { name: 'Rasio cicilan', how: 'Total cicilan dibagi pemasukan. Batasnya 30%; di atas itu ditandai.' },
   { name: 'Pembagian pemasukan', how: 'Porsi pemasukan untuk pengeluaran rutin, cicilan, dan yang tersisa.' },
 ];
 
@@ -51,7 +52,7 @@ export default function Landing() {
           <div className="flex flex-col gap-3">
             <h2 id="isi-h" className="text-2xl font-bold tracking-tight">Yang Anda isi</h2>
             <p className="max-w-[40ch] text-muted">
-              Enam bagian, masing-masing satu layar. Bagian utang dan aset boleh dilewati. Angka bisa diperbarui kapan saja.
+              {dataSteps.length} bagian, masing-masing satu layar. Bagian utang dan aset boleh dilewati. Angka bisa diperbarui kapan saja.
             </p>
           </div>
           <ol className="grid gap-x-8 sm:grid-cols-2">
@@ -94,7 +95,13 @@ export default function Landing() {
         </section>
       </main>
 
-      <footer className="border-t border-line py-6 text-[13px] text-muted">Kas Keluarga · versi awal untuk penggunaan keluarga</footer>
+      <footer className="flex flex-col gap-3 border-t border-line py-6 text-[13px] text-muted sm:flex-row sm:items-center sm:justify-between">
+        <span>Kas Keluarga · versi awal untuk penggunaan keluarga</span>
+        <nav aria-label="Dokumen hukum" className="flex gap-4">
+          <Link href="/privasi" className="link inline-flex min-h-11 items-center">Kebijakan Privasi</Link>
+          <Link href="/ketentuan" className="link inline-flex min-h-11 items-center">Syarat Layanan</Link>
+        </nav>
+      </footer>
     </div>
   );
 }
