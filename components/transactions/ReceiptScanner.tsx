@@ -32,7 +32,7 @@ async function shrink(file: File): Promise<Blob> {
   return blob;
 }
 
-export function ReceiptScanner({ onResult }: { onResult: (r: { path: string; fields: ReceiptFields | null }) => void }) {
+export function ReceiptScanner({ onResult, aiReady }: { onResult: (r: { path: string; fields: ReceiptFields | null }) => void; aiReady: boolean }) {
   const id = useId();
   const input = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<Status>({ kind: 'idle' });
@@ -76,8 +76,12 @@ export function ReceiptScanner({ onResult }: { onResult: (r: { path: string; fie
   return (
     <section id="struk" aria-labelledby={`${id}-h`} className="flex flex-col gap-3 rounded-[12px] border border-dashed border-line-strong bg-inset p-4 sm:p-5">
       <div className="flex flex-col gap-1">
-        <h2 id={`${id}-h`} className="font-semibold">Isi dari foto struk atau nota</h2>
-        <p className="text-[13px] text-muted">Jumlah, tanggal, toko, dan kategori diisi otomatis. Foto disimpan sebagai lampiran transaksi.</p>
+        <h2 id={`${id}-h`} className="font-semibold">{aiReady ? 'Isi dari foto struk atau nota' : 'Lampirkan foto struk atau nota'}</h2>
+        <p className="text-[13px] text-muted">
+          {aiReady
+            ? 'Jumlah, tanggal, toko, dan kategori diisi otomatis. Foto disimpan sebagai lampiran transaksi.'
+            : 'Foto disimpan sebagai lampiran transaksi. Pengisian otomatis dari foto menyusul; untuk sekarang isi transaksinya di bawah.'}
+        </p>
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <input

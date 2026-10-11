@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
   const ctx = await getHousehold('/transaksi/impor').catch(() => null);
   if (!ctx) return fail(401, 'Sesi Anda berakhir. Masuk lagi, lalu ulangi.');
   if (!ctx.household || !canWrite(ctx.role)) return fail(403, 'Akun Anda tidak bisa mengimpor transaksi.');
-  if (!aiConfigured) return fail(503, 'Pembacaan e-statement belum aktif: ANTHROPIC_API_KEY belum diisi di pengaturan Vercel.');
+  if (!aiConfigured) return fail(503, 'Impor e-statement belum tersedia. Catat transaksinya manual dulu.');
 
   const form = await request.formData().catch(() => null);
   const file = form?.get('file');

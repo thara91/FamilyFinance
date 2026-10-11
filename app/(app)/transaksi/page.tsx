@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { aiConfigured } from '@/lib/ai';
 import { ACCOUNT_KINDS, type AccountKind } from '@/lib/baseline';
 import { canWrite, getAccounts, getCustomCategories, getHousehold } from '@/lib/household';
 import { formatRupiah } from '@/lib/money';
@@ -81,8 +82,8 @@ export default async function TransactionsPage({ searchParams }: { searchParams:
         </div>
         {writable ? (
           <div className="flex flex-wrap gap-2">
-            <Link href="/transaksi/impor" className="btn"><IconFile />Impor e-statement</Link>
-            <Link href="/transaksi/baru#struk" className="btn"><IconCamera />Pindai struk</Link>
+            {aiConfigured ? <Link href="/transaksi/impor" className="btn"><IconFile />Impor e-statement</Link> : null}
+            <Link href="/transaksi/baru#struk" className="btn"><IconCamera />{aiConfigured ? 'Pindai struk' : 'Lampirkan struk'}</Link>
             <Link href="/transaksi/baru" className="btn btn-primary"><IconPlus />Catat transaksi</Link>
           </div>
         ) : null}

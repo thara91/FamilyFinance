@@ -26,9 +26,10 @@ interface Props {
   today: string;
   receiptUrl?: string | null;
   source?: string;
+  aiReady?: boolean;
 }
 
-export function TransactionForm({ initial, accounts, categories, today, receiptUrl, source }: Props) {
+export function TransactionForm({ initial, accounts, categories, today, receiptUrl, source, aiReady = true }: Props) {
   const [state, action, pending] = useActionState<FormState, FormData>(saveTransaction, { errors: {} });
   const [v, setV] = useState<TxValues>(() => initial);
   const [receipt, setReceipt] = useState<string | null>(null);
@@ -67,7 +68,7 @@ export function TransactionForm({ initial, accounts, categories, today, receiptU
 
   return (
     <div className="flex flex-col gap-5">
-      {!editing ? <ReceiptScanner onResult={applyReceipt} /> : null}
+      {!editing ? <ReceiptScanner onResult={applyReceipt} aiReady={aiReady} /> : null}
 
       <form action={action} noValidate className="card flex flex-col gap-5 p-5 sm:p-7">
         <input type="hidden" name="id" value={initial.id ?? ''} />

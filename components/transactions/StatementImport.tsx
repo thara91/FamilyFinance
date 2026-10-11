@@ -71,8 +71,8 @@ export function StatementImport({ accounts, categories, aiReady }: Props) {
   if (!aiReady) {
     return (
       <div role="alert" className="card flex flex-col gap-2">
-        <h2 className="font-semibold">Pembacaan e-statement belum aktif</h2>
-        <p className="text-muted">Isi ANTHROPIC_API_KEY di Vercel (Settings &gt; Environment Variables), lalu deploy ulang. Sambil menunggu, transaksi tetap bisa dicatat manual.</p>
+        <h2 className="font-semibold">Impor e-statement menyusul</h2>
+        <p className="text-muted">Pembacaan PDF mutasi bank belum diaktifkan. Sambil menunggu, transaksi tetap bisa dicatat manual.</p>
         <Link href="/transaksi/baru" className="btn self-start">Catat manual</Link>
       </div>
     );

@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (!aiConfigured) {
-    return NextResponse.json({ path, fields: null, notice: 'Foto tersimpan sebagai lampiran. Pembacaan otomatis belum aktif (ANTHROPIC_API_KEY belum diisi), jadi isi transaksinya di bawah.' });
+    return NextResponse.json({ path, fields: null, notice: 'Foto tersimpan sebagai lampiran. Isi transaksinya di bawah.' });
   }
 
   try {

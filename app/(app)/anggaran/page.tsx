@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { aiConfigured } from '@/lib/ai';
 import { canWrite, getCustomCategories, getHousehold } from '@/lib/household';
 import { formatPercent, formatRupiah } from '@/lib/money';
 import {
@@ -121,7 +122,7 @@ export default async function BudgetPage({ searchParams }: { searchParams: Promi
             {writable ? (
               <div className="flex flex-wrap gap-2">
                 <Link href="/transaksi/baru" className="btn">Catat transaksi</Link>
-                <Link href="/transaksi/impor" className="btn">Impor e-statement</Link>
+                {aiConfigured ? <Link href="/transaksi/impor" className="btn">Impor e-statement</Link> : null}
               </div>
             ) : null}
           </div>

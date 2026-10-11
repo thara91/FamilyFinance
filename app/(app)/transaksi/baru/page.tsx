@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { canWrite, getAccounts, getCustomCategories, getHousehold } from '@/lib/household';
 import { categoriesFor, jakartaToday } from '@/lib/transactions';
+import { aiConfigured } from '@/lib/ai';
 import { TransactionForm } from '@/components/transactions/TransactionForm';
 import { IconBack } from '@/components/icons';
 
@@ -23,6 +24,7 @@ export default async function NewTransactionPage() {
         <h1 className="text-[24px] font-bold tracking-tight sm:text-[26px]">Catat transaksi</h1>
       </div>
       <TransactionForm
+        aiReady={aiConfigured}
         today={today}
         accounts={accounts.map((a) => ({ id: a.id, name: a.name }))}
         categories={{ masuk: categoriesFor('masuk'), keluar }}
