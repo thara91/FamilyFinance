@@ -3,6 +3,6 @@ export const SITE = {
   name: 'Kas Keluarga',
   operatorName: '[NAMA PENGELOLA]',
   contactEmail: '[EMAIL KONTAK]',
-  dataRegion: '[REGION SUPABASE, misalnya Singapura]',
-  legalEffectiveDate: '3 Oktober 2026',
+  dataRegion: 'Mumbai, India (ap-south-1)',
+  legalEffectiveDate: '11 Oktober 2026',
 };

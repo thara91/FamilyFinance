@@ -24,6 +24,8 @@ export default function PrivacyPage() {
           <li>Nama, jenis, dan saldo rekening, e-wallet, reksa dana pasar uang, dan uang tunai, serta tanda mana yang menjadi penampung dana darurat.</li>
           <li>Pemasukan per bulan, pengeluaran per kategori, utang (sisa pokok dan cicilan), serta aset dan perkiraan nilainya.</li>
           <li>Status penghasilan (freelance, lajang, menikah, menikah dengan anak), target dana darurat, dan persentase alokasi bulanan.</li>
+          <li>Transaksi yang Anda catat atau impor: tanggal, jumlah, kategori, keterangan, rekening, dan catatan; serta batas anggaran per kategori.</li>
+          <li>Foto struk atau nota yang Anda unggah, disimpan sebagai lampiran transaksi.</li>
           <li>Cookie sesi yang dibuat saat Anda masuk, agar Anda tidak perlu masuk ulang di setiap halaman.</li>
         </List>
       </Section>
@@ -31,7 +33,8 @@ export default function PrivacyPage() {
       <Section id="tidak" title="3. Yang tidak dikumpulkan">
         <List>
           <li>Nomor rekening, nomor kartu, PIN, atau kata sandi bank.</li>
-          <li>Data mutasi rekening dari bank. Semua angka Anda isi sendiri.</li>
+          <li>Akses langsung ke rekening bank. Mutasi hanya masuk bila Anda sendiri mengunggah e-statement.</li>
+          <li>File PDF e-statement. File itu dibaca sekali untuk diambil baris transaksinya, lalu dibuang; hanya baris yang Anda pilih yang disimpan.</li>
           <li>Pelacak iklan atau analitik pihak ketiga.</li>
         </List>
       </Section>
@@ -55,6 +58,10 @@ export default function PrivacyPage() {
         <List>
           <li>Database dan layanan masuk: Supabase, di region {SITE.dataRegion}.</li>
           <li>Hosting aplikasi web: Vercel.</li>
+          <li>
+            Pembacaan foto struk dan e-statement: Claude API dari Anthropic. Foto atau PDF dikirim saat Anda menekan tombol baca, lalu hasilnya
+            dikembalikan ke aplikasi. Anthropic memprosesnya sesuai ketentuan layanan komersial Claude API.
+          </li>
         </List>
         <p>
           Setiap tabel dilindungi aturan akses di tingkat database, sehingga sebuah akun hanya bisa membaca data keluarga tempat ia terdaftar.
@@ -63,7 +70,7 @@ export default function PrivacyPage() {
       </Section>
 
       <Section id="lama" title="7. Lama penyimpanan">
-        <p>Data disimpan selama akun Anda aktif. Bila Anda meminta penghapusan akun, data keluarga yang Anda miliki ikut dihapus.</p>
+        <p>Data dan foto struk disimpan selama akun Anda aktif; foto struk ikut terhapus saat transaksinya dihapus. Bila Anda meminta penghapusan akun, data keluarga yang Anda miliki ikut dihapus.</p>
       </Section>
 
       <Section id="hak" title="8. Hak Anda">
