@@ -99,6 +99,8 @@ export const STEPS = [
 
 export type StepKey = (typeof STEPS)[number]['key'];
 
+const SAVED_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export function newId(): string {
   return Math.random().toString(36).slice(2, 10);
 }
@@ -331,7 +333,8 @@ export function toPayload(d: Draft) {
       emergencyTargetMonths: d.household.emergencyTargetMonths,
       allocationPct: d.household.allocationPct,
     },
-    accounts: d.accounts.map((r) => ({ name: r.name.trim(), kind: r.kind, balance: r.balance, isEmergency: r.isEmergency && canHoldEmergency(r.kind) })),
+    // Saved accounts carry their database id so save_baseline updates them in place and their transactions stay linked.
+    accounts: d.accounts.map((r) => ({ id: SAVED_ID.test(r.id) ? r.id : null, name: r.name.trim(), kind: r.kind, balance: r.balance, isEmergency: r.isEmergency && canHoldEmergency(r.kind) })),
     incomes: d.incomes.map((r) => ({ name: r.name.trim(), earner: r.earner.trim(), amount: r.amount })),
     // Prefilled categories left at zero are suggestions, not data.
     expenses: d.expenses.filter((r) => r.amount > 0).map((r) => ({ category: r.category.trim(), amount: r.amount, isRoutine: r.isRoutine })),
@@ -343,7 +346,7 @@ export function toPayload(d: Draft) {
 export interface BaselineRecord {
   household: { name: string; earning_status: EarningStatus | null; emergency_target_months: number; emergency_allocation_pct: number; updated_at: string };
   ownerName: string | null;
-  accounts: { name: string; kind: AccountKind; balance: number; is_emergency: boolean }[];
+  accounts: { id: string; name: string; kind: AccountKind; balance: number; is_emergency: boolean }[];
   incomes: { name: string; earner: string | null; monthly_amount: number }[];
   expenses: { category: string; monthly_amount: number; is_routine: boolean }[];
   debts: { name: string; kind: DebtKind; principal_remaining: number; monthly_installment: number }[];
@@ -371,7 +374,7 @@ export function fromRecord(r: BaselineRecord): Draft {
       emergencyTargetMonths: status ? r.household.emergency_target_months : 0,
       allocationPct: r.household.emergency_allocation_pct ?? DEFAULT_ALLOCATION_PCT,
     },
-    accounts: r.accounts.map((x) => ({ id: newId(), name: x.name, kind: x.kind, balance: Number(x.balance), isEmergency: x.is_emergency })),
+    accounts: r.accounts.map((x) => ({ id: x.id, name: x.name, kind: x.kind, balance: Number(x.balance), isEmergency: x.is_emergency })),
     incomes: r.incomes.map((x) => ({ id: newId(), name: x.name, earner: x.earner ?? '', amount: Number(x.monthly_amount) })),
     expenses,
     debts: r.debts.map((x) => ({ id: newId(), name: x.name, kind: x.kind, principal: Number(x.principal_remaining), installment: Number(x.monthly_installment) })),

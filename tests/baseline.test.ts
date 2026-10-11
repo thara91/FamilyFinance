@@ -104,6 +104,7 @@ test('payload drops zero suggestions, keeps flags, never tags cash', () => {
   assert.equal(p.expenses[1].isRoutine, false);
   assert.equal(p.accounts[1].isEmergency, false);
   assert.equal(p.household.earningStatus, 'menikah');
+  assert.equal(p.accounts[0].id, null);
 });
 
 test('older drafts without the new fields still load', () => {
@@ -120,7 +121,7 @@ test('fromRecord restores saved rows, flags and custom categories', () => {
   const d = fromRecord({
     household: { name: 'K', earning_status: 'menikah_anak', emergency_target_months: 12, emergency_allocation_pct: 15, updated_at: '2026-10-03' },
     ownerName: 'Ibu',
-    accounts: [{ name: 'RDPU', kind: 'rdpu', balance: 100, is_emergency: true }],
+    accounts: [{ id: '0f8f5c1e-2b4a-4c3d-9e7f-1a2b3c4d5e6f', name: 'RDPU', kind: 'rdpu', balance: 100, is_emergency: true }],
     incomes: [{ name: 'Gaji', earner: null, monthly_amount: 5 }],
     expenses: [{ category: 'Transportasi', monthly_amount: 7, is_routine: false }, { category: 'Hobi', monthly_amount: 3, is_routine: false }],
     debts: [],
@@ -129,6 +130,7 @@ test('fromRecord restores saved rows, flags and custom categories', () => {
   assert.equal(d.household.emergencyTargetMonths, 12);
   assert.equal(d.household.allocationPct, 15);
   assert.equal(d.accounts[0].isEmergency, true);
+  assert.equal(toPayload(d).accounts[0].id, '0f8f5c1e-2b4a-4c3d-9e7f-1a2b3c4d5e6f');
   const t = d.expenses.find((x) => x.category === 'Transportasi');
   assert.equal(t?.amount, 7);
   assert.equal(t?.isRoutine, false);

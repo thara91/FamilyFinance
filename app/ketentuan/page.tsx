@@ -15,7 +15,8 @@ export default function TermsPage() {
       <Section id="layanan" title="1. Layanan">
         <p>
           {SITE.name} adalah alat untuk mencatat kondisi keuangan keluarga dan menghitung ringkasannya. {SITE.name} bukan bank, tidak menyimpan
-          atau memindahkan uang, dan tidak terhubung ke rekening Anda. Semua angka berasal dari isian Anda.
+          atau memindahkan uang, dan tidak terhubung ke rekening Anda. Semua angka berasal dari isian Anda, atau dari foto struk dan
+          e-statement yang Anda unggah. Hasil pembacaan otomatis bisa keliru; periksa setiap angka sebelum menyimpan.
         </p>
       </Section>
 

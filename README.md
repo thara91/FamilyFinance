@@ -1,6 +1,6 @@
 # Kas Keluarga
 
-Aplikasi keuangan keluarga. Versi ini: landing page, isian kondisi keuangan awal (7 langkah), dan dashboard ringkasan.
+Aplikasi keuangan keluarga: kondisi keuangan awal, dashboard, transaksi (catat manual, pindai struk, impor e-statement PDF), dan anggaran.
 
 Next.js 16 · Supabase (Auth + Postgres + RLS) · Tailwind CSS 4 · Plus Jakarta Sans
 
@@ -10,7 +10,8 @@ Next.js 16 · Supabase (Auth + Postgres + RLS) · Tailwind CSS 4 · Plus Jakarta
 ## Menyiapkan Supabase (sekali)
 
 1. Buka proyek Supabase Anda, masuk ke **SQL Editor**, lalu jalankan file di `supabase/migrations/` satu per satu sesuai urutan nama:
-   `20261003000000_kondisi_awal.sql`, kemudian `20261003010000_dana_darurat.sql`.
+   `20261003000000_kondisi_awal.sql`, `20261003010000_dana_darurat.sql`, `20261011000000_transaksi_anggaran.sql`,
+   lalu `20261011010000_save_baseline_pertahankan_rekening.sql`. Migrasi ketiga juga membuat bucket Storage privat `receipts`.
 2. **Authentication > URL Configuration**:
    - Site URL: alamat Vercel Anda, misalnya `https://kas-keluarga.vercel.app`
    - Redirect URLs: tambahkan `https://kas-keluarga.vercel.app/auth/callback` dan `http://localhost:3000/auth/callback`
@@ -38,7 +39,9 @@ npm run dev                  # http://localhost:3000
 
 1. Vercel > **Add New > Project** > pilih repo `FamilyFinance`.
 2. Bila kode masih di branch `nextjs-supabase`, ubah *Production Branch* di **Settings > Git**, atau gabungkan dulu ke `main`.
-3. **Environment Variables**: `NEXT_PUBLIC_SUPABASE_URL` dan `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+3. **Environment Variables**: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, dan `ANTHROPIC_API_KEY`
+   (dari console.anthropic.com, untuk membaca struk dan e-statement; tandai *Sensitive*). Tanpa kunci ini aplikasi tetap jalan,
+   tetapi struk hanya tersimpan sebagai lampiran dan impor e-statement belum aktif.
 4. Deploy. Framework terdeteksi otomatis sebagai Next.js.
 
 ## Pengujian
